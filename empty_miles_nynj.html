@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J. Hammerhead Trucking LLC — Empty Miles Tracker NY/NJ/PA/CT</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --blue:    #185fa5;
+    --green:   #3b6d11;
+    --red:     #a32d2d;
+    --amber:   #854f0b;
+    --purple:  #533ab7;
+    --teal:    #0f6e56;
+    --bg:      #f8f7f4;
+    --card:    #ffffff;
+    --border:  rgba(0,0,0,0.10);
+    --text:    #1a1a18;
+    --muted:   #6b6b66;
+    --success-bg: #eaf3de;
+    --success-tx: #3b6d11;
+    --danger-bg:  #fcebeb;
+    --danger-tx:  #a32d2d;
+    --warn-bg:    #faeeda;
+    --warn-tx:    #854f0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+  /* ── LAYOUT ── */
+  .shell { max-width: 1100px; margin: 0 auto; padding: 0 16px 60px; }
+  .app-header { padding: 28px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 0; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .app-header h1 { font-size: 22px; font-weight: 600; color: var(--text); }
+  .app-header p  { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .print-btn { background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 8px 18px; font-size: 13px; font-weight: 500; cursor: pointer; }
+  .print-btn:hover { opacity: 0.88; }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); background: var(--card); padding: 0 0 0 0; position: sticky; top: 0; z-index: 10; }
+  .tab { padding: 14px 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: none; color: var(--muted); border-bottom: 3px solid transparent; transition: color .15s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .panel { display: none; padding: 24px 0; }
+  .panel.active { display: block; }
+
+  /* ── CARDS ── */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+  .card-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px; }
+
+  /* ── KPI GRID ── */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .kpi-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
+  .kpi-value { font-size: 26px; font-weight: 600; }
+  .kpi-sub { font-size: 11px; margin-top: 4px; }
+  .c-red   { color: var(--red); }
+  .c-green { color: var(--green); }
+  .c-blue  { color: var(--blue); }
+  .c-amber { color: var(--amber); }
+
+  /* ── CHARTS ROW ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media(max-width:620px){ .two-col { grid-template-columns: 1fr; } }
+
+  /* ── LEGEND ── */
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex-shrink: 0; }
+
+  /* ── TABLE ── */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; font-weight: 600; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; padding: 8px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 9px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f5f4f0; }
+
+  /* ── BADGES ── */
+  .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+  .b-red   { background: var(--danger-bg); color: var(--danger-tx); }
+  .b-green { background: var(--success-bg); color: var(--success-tx); }
+  .b-amber { background: var(--warn-bg); color: var(--warn-tx); }
+
+  /* ── PROGRESS BAR ── */
+  .pbar { display: flex; align-items: center; gap: 8px; }
+  .pbar-track { flex: 1; height: 6px; background: #e8e7e3; border-radius: 3px; overflow: hidden; min-width: 60px; }
+  .pbar-fill { height: 100%; border-radius: 3px; }
+
+  /* ── DRIVER PROFILES ── */
+  .driver-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .driver-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .driver-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .driver-name { font-size: 14px; font-weight: 600; }
+  .driver-phone { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .driver-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .dstat { background: var(--bg); border-radius: 6px; padding: 7px 9px; }
+  .dstat-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+  .dstat-value { font-size: 15px; font-weight: 600; margin-top: 2px; }
+  .driver-bar { margin-top: 10px; }
+  .driver-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .driver-bar-track { height: 7px; background: #e8e7e3; border-radius: 4px; overflow: hidden; }
+  .driver-bar-fill { height: 100%; border-radius: 4px; }
+
+  /* ── MAP ── */
+  .map-box { background: #eef2f7; border-radius: 10px; overflow: hidden; margin-bottom: 14px; }
+  #routeMap { display: block; width: 100%; }
+  .route-info-box { background: var(--bg); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+  /* ── OPTIMIZATION ── */
+  .slider-section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
+  .slider-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .slider-top label { font-size: 13px; font-weight: 500; }
+  .slider-rate { font-size: 24px; font-weight: 700; color: var(--blue); }
+  input[type=range] { width: 100%; accent-color: var(--blue); }
+  .saving-banner { background: var(--success-bg); border: 1px solid rgba(59,109,17,0.2); border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .saving-label { font-size: 13px; color: var(--success-tx); font-weight: 600; }
+  .saving-value { font-size: 22px; font-weight: 700; color: var(--success-tx); }
+  .opt-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  @media(max-width:620px){ .opt-cols { grid-template-columns:1fr; } }
+  .opt-card { border-radius: 12px; padding: 16px 18px; border: 1px solid var(--border); background: var(--card); }
+  .opt-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+  .opt-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .opt-row:last-child { border-bottom: none; }
+
+  /* ── TALKING POINTS ── */
+  .tp-section { background: #fffdf5; border: 1px solid rgba(133,79,11,0.18); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
+  .tp-section h3 { font-size: 13px; font-weight: 700; color: var(--amber); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .tp-list { list-style: none; }
+  .tp-list li { font-size: 13px; color: var(--text); padding: 5px 0 5px 16px; position: relative; line-height: 1.5; }
+  .tp-list li::before { content: '→'; position: absolute; left: 0; color: var(--amber); font-weight: 700; }
+
+  /* ── PRINT SUMMARY ── */
+  .print-summary { display: none; }
+  @media print {
+    .tabs, .print-btn, .tab, .slider-section input { display: none !important; }
+    .panel { display: block !important; page-break-after: always; }
+    .print-summary { display: block !important; }
+    body { background: #fff; }
+    .shell { padding: 0 16px; }
+    .app-header { position: static; }
+  }
+
+  /* ── PRINT BUTTON PANEL ── */
+  #panel-print { padding: 24px 0; }
+  .print-report { max-width: 720px; }
+  .pr-header { text-align: center; border-bottom: 2px solid var(--blue); padding-bottom: 16px; margin-bottom: 24px; }
+  .pr-header h2 { font-size: 20px; font-weight: 700; color: var(--blue); }
+  .pr-header p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .pr-section { margin-bottom: 24px; }
+  .pr-section h3 { font-size: 14px; font-weight: 700; color: var(--text); border-left: 4px solid var(--blue); padding-left: 10px; margin-bottom: 12px; }
+  .pr-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .pr-kpi { background: var(--bg); border-radius: 8px; padding: 12px; text-align: center; }
+  .pr-kpi-label { font-size: 11px; color: var(--muted); font-weight: 600; }
+  .pr-kpi-value { font-size: 20px; font-weight: 700; margin-top: 4px; }
+  .pr-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 14px; }
+  .pr-table th { background: var(--blue); color: #fff; padding: 8px; text-align: left; font-size: 11px; }
+  .pr-table td { padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  .pr-table tr:last-child td { border-bottom: none; }
+  .pr-finding { display: flex; gap: 10px; margin-bottom: 8px; font-size: 13px; }
+  .pr-finding-num { width: 22px; height: 22px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .pr-rec { background: var(--success-bg); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; font-size: 13px; color: var(--success-tx); }
+  .pr-footer { text-align: center; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); padding-top: 14px; margin-top: 24px; }
+  .do-print-btn { background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 20px; }
+  .do-print-btn:hover { opacity: 0.88; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- HEADER -->
+  <div class="app-header">
+    <div>
+      <h1>J. HAMMERHEAD TRUCKING LLC</h1>
+      <p style="font-size:16px;font-weight:500;color:var(--text)">Empty Miles Tracker — NY/NJ/PA/CT Freight &nbsp;·&nbsp; Independent truckers &nbsp;·&nbsp; 6 drivers &nbsp;·&nbsp; 25 trips &nbsp;·&nbsp; 30-day window</p>
+    </div>
+    <button class="print-btn" onclick="showTab('print')">Summary report ↗</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active"  onclick="showTab('dashboard')">Dashboard</button>
+    <button class="tab"         onclick="showTab('value')">Value proposition</button>
+    <button class="tab"         onclick="showTab('drivers')">Driver profiles</button>
+    <button class="tab"         onclick="showTab('map')">Route map</button>
+    <button class="tab"         onclick="showTab('optimization')">Optimization</button>
+    <button class="tab"         onclick="showTab('mobile')">Driver mobile app</button>
+    <button class="tab"         onclick="showTab('predict')">Predictive positioning</button>
+    <button class="tab"         onclick="showTab('print')">Summary report</button>
+    <button class="tab"         onclick="showTab('journey')">Project journey</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TAB 7: DRIVER MOBILE APP                                -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div id="panel-dashboard" class="panel active">
+
+    <div class="tp-section">
+      <h3>📋 Talking points — Dashboard</h3>
+      <ul class="tp-list">
+        <li>The NY/NJ/CT/PA corridor is one of the busiest freight markets in the US, anchored by Port Newark, JFK Cargo, and the Hunts Point food terminal in the Bronx.</li>
+        <li>J. Hammerhead Trucking LLC logged 25 trips over 30 days, covering 2,329 total miles — 957 of those miles were driven with an empty trailer, representing a 41% empty rate.</li>
+        <li>The realistic working estimate for independent truckers in this corridor is 35–40%. At 41%, J. Hammerhead is running just above that range — representing a direct and immediate opportunity for cost reduction.</li>
+        <li>At $2.50 per mile (reflecting current fuel and operating costs for a Class 8 truck), those empty miles cost an estimated $2,393 in the 30-day period — or roughly $28,710 per year if unchanged.</li>
+        <li>The weekly chart shows empty miles are consistent across the month — this is not a seasonal spike, it is a structural problem that requires a systematic fix.</li>
+      </ul>
+    </div>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Weekly miles — loaded vs empty</div>
+        <div class="legend">
+          <span><span class="dot" style="background:#3b6d11"></span>Loaded</span>
+          <span><span class="dot" style="background:#a32d2d"></span>Empty (deadhead)</span>
+        </div>
+        <div style="position:relative;height:200px"><canvas id="barChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Empty miles by origin hub</div>
+        <div class="legend" id="donutLegend"></div>
+        <div style="position:relative;height:200px"><canvas id="donutChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Trip log — full 30-day record</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:8%">Trip</th>
+            <th style="width:15%">Driver</th>
+            <th style="width:14%">Origin</th>
+            <th style="width:14%">Destination</th>
+            <th style="width:7%">Total</th>
+            <th style="width:7%">Empty</th>
+            <th style="width:17%">Empty %</th>
+            <th style="width:9%">Hub</th>
+            <th style="width:9%">Status</th>
+          </tr></thead>
+          <tbody id="tripTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TAB 2: VALUE PROPOSITION                                -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div id="panel-value" class="panel">
+
+    <div class="tp-section">
+      <h3>📋 Talking points — Value proposition</h3>
+      <ul class="tp-list">
+        <li>Load matching platforms like DAT, Truckstop.com, and Uber Freight already exist — but they are built for high-volume brokers and large carriers, not independent owner-operators running 4 to 6 trucks in a regional corridor.</li>
+        <li>Independent drivers may have access to load boards and broker relationships — but having access to tools and having the time, expertise, and leverage to use them effectively while driving 10 hours a day are two very different things.</li>
+        <li>J. Hammerhead Trucking LLC is not just a trucking company — it is a fleet management and dispatch optimization service that provides the intelligence layer independent operators cannot build for themselves.</li>
+        <li>Think of it this way — an independent musician can book their own gigs and negotiate their own contracts, but most successful artists still work with a manager because the manager does it better, faster, and more profitably. J. Hammerhead is the manager. The drivers are the performers.</li>
+      </ul>
+    </div>
+
+    <!-- Who we are -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Who is J. Hammerhead Trucking LLC?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap">
+        <div>
+          <p style="font-size:13px;line-height:1.8;color:#444">J. Hammerhead Trucking LLC is a regional fleet management and dispatch optimization company operating in the NY/NJ/CT/PA freight corridor. The company coordinates a network of independent owner-operators, providing centralized dispatch intelligence, load matching, and performance analytics that individual drivers cannot efficiently manage while also operating a vehicle for 10 or more hours per day.</p>
+          <p style="font-size:13px;line-height:1.8;color:#444;margin-top:10px">Drivers bring the trucks and the licenses. J. Hammerhead brings the technology, the broker relationships, the market intelligence, and the negotiating power of a coordinated fleet — turning six independent operators into one efficient, data-driven organization.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="background:var(--bg);border-radius:10px;padding:12px 14px;border-left:4px solid var(--blue)">
+            <div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Operating corridor</div>
+            <div style="font-size:13px;font-weight:600">NY · NJ · CT · PA</div>
+          </div>
+          <div style="background:var(--bg);border-radius:10px;padding:12px 14px;border-left:4px solid var(--green)">
+            <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Fleet size</div>
+            <div style="font-size:13px;font-weight:600">6 independent owner-operators</div>
+          </div>
+          <div style="background:var(--bg);border-radius:10px;padding:12px 14px;border-left:4px solid var(--amber)">
+            <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Primary hubs</div>
+            <div style="font-size:13px;font-weight:600">Port Newark · Hunts Point · Meadowlands · Edison NJ · JFK Cargo</div>
+          </div>
+          <div style="background:var(--bg);border-radius:10px;padding:12px 14px;border-left:4px solid var(--red)">
+            <div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Current empty mile cost</div>
+            <div style="font-size:13px;font-weight:600">$28,710 / year at $2.50/mi</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Why drivers need J. Hammerhead -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">The question — if drivers already have load boards, why do they need J. Hammerhead?</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:4px">
+        <div style="background:var(--bg);border-radius:10px;padding:14px">
+          <div style="font-size:22px;margin-bottom:6px">🕐</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">No time to search</div>
+          <div style="font-size:12px;color:#555;line-height:1.6">A driver behind the wheel for 10 hours a day cannot simultaneously monitor three load boards and maintain broker relationships. J. Hammerhead does that centrally for all 6 drivers at once.</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:14px">
+          <div style="font-size:22px;margin-bottom:6px">💪</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Negotiating power</div>
+          <div style="font-size:12px;color:#555;line-height:1.6">One driver calling a broker has little leverage. Six drivers operating under one company name with consistent volume can negotiate better rates and get priority access to loads.</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:14px">
+          <div style="font-size:22px;margin-bottom:6px">📊</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Visibility they lack</div>
+          <div style="font-size:12px;color:#555;line-height:1.6">Most independent truckers have never seen their own deadhead rate, their cost per empty mile, or which lanes consistently produce empty returns. This dashboard gives them that for the first time.</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:14px">
+          <div style="font-size:22px;margin-bottom:6px">🔔</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Right moment alerts</div>
+          <div style="font-size:12px;color:#555;line-height:1.6">Even with a DAT subscription, a driver is not searching for loads while making a delivery. J. Hammerhead monitors available backhauls and pushes the best option to the driver at exactly the right moment.</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:14px">
+          <div style="font-size:22px;margin-bottom:6px">🔮</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Predictive intelligence</div>
+          <div style="font-size:12px;color:#555;line-height:1.6">No individual driver is going to build a 7-day risk calendar from 30 days of trip history. J. Hammerhead does that automatically and pushes recommendations before the truck leaves the dock.</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:14px">
+          <div style="font-size:22px;margin-bottom:6px">🤝</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Direct relationships</div>
+          <div style="font-size:12px;color:#555;line-height:1.6">J. Hammerhead builds standing arrangements with shippers at regularly served hubs — like Bethlehem Steel Supply Co. and Hudson Valley Distributors — securing reliable return loads that individual drivers cannot easily establish alone.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Competitive landscape -->
+    <div class="card">
+      <div class="card-title">How J. Hammerhead differs from existing platforms</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:22%">Feature</th>
+              <th style="width:19%">DAT / Truckstop</th>
+              <th style="width:19%">Uber Freight</th>
+              <th style="width:19%">Convoy</th>
+              <th style="width:21%;color:var(--blue)">J. Hammerhead</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="font-weight:600">Built for independent operators</td><td style="color:var(--red)">✗ Enterprise focus</td><td style="color:var(--red)">✗ High volume</td><td style="color:var(--red)">✗ Large carriers</td><td style="color:var(--green);font-weight:600">✓ Core focus</td></tr>
+            <tr><td style="font-weight:600">Own fleet diagnostics</td><td style="color:var(--red)">✗ Marketplace only</td><td style="color:var(--red)">✗ No analytics</td><td style="color:var(--red)">✗ No analytics</td><td style="color:var(--green);font-weight:600">✓ Full dashboard</td></tr>
+            <tr><td style="font-weight:600">Deadhead rate tracking</td><td style="color:var(--red)">✗</td><td style="color:var(--red)">✗</td><td style="color:var(--red)">✗</td><td style="color:var(--green);font-weight:600">✓ Per driver</td></tr>
+            <tr><td style="font-weight:600">Predictive positioning</td><td style="color:var(--red)">✗</td><td style="color:var(--red)">✗</td><td style="color:var(--amber)">Partial</td><td style="color:var(--green);font-weight:600">✓ 7-day calendar</td></tr>
+            <tr><td style="font-weight:600">Driver mobile alerts</td><td style="color:var(--amber)">Manual search</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td><td style="color:var(--green);font-weight:600">✓ Proactive push</td></tr>
+            <tr><td style="font-weight:600">Regional corridor focus</td><td style="color:var(--red)">✗ National</td><td style="color:var(--red)">✗ National</td><td style="color:var(--red)">✗ National</td><td style="color:var(--green);font-weight:600">✓ NY/NJ/CT/PA</td></tr>
+            <tr><td style="font-weight:600">Monthly cost to operator</td><td style="color:var(--red)">$150–$500</td><td style="color:var(--amber)">Commission %</td><td style="color:var(--amber)">Commission %</td><td style="color:var(--green);font-weight:600">Included in fleet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TAB 3: DRIVER PROFILES                                  -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div id="panel-drivers" class="panel">
+
+    <div class="tp-section">
+      <h3>📋 Talking points — Driver profiles</h3>
+      <ul class="tp-list">
+        <li>Empty miles are not evenly distributed across drivers. Some drivers consistently run efficient routes; others are structurally assigned to lanes with poor backhaul availability.</li>
+        <li>This is important: a high empty-mile rate for a driver is not necessarily their fault. It often reflects the route they are assigned, not their skill or effort.</li>
+        <li>Darnell Pruitt and Ray Thibodeau show the highest empty rates — both operate lanes into western Pennsylvania, where outbound freight from the NY area exceeds available return loads.</li>
+        <li>Marcus Webb and Sandra Kowalski show the lowest empty rates — their routes (Port Newark ↔ metro area) have dense freight in both directions.</li>
+        <li>A load-matching system should prioritize filling the return legs for the highest-empty-rate drivers first, as that is where the greatest savings are concentrated.</li>
+      </ul>
+    </div>
+
+    <div class="driver-grid" id="driverGrid"></div>
+
+    <div class="card">
+      <div class="card-title">Driver performance comparison</div>
+      <div style="position:relative;height:220px"><canvas id="driverChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TAB 3: ROUTE MAP                                        -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div id="panel-map" class="panel">
+
+    <div class="tp-section">
+      <h3>📋 Talking points — Route map</h3>
+      <ul class="tp-list">
+        <li>The map shows every trip in the 30-day window. Green arcs are loaded (revenue-generating) legs. Red arcs are deadhead (empty) legs — miles driven with no freight and no income.</li>
+        <li>Notice the concentration of red arcs going west toward Bethlehem and Allentown PA — these are the worst-performing lanes. Goods flow heavily into that region from the ports, but there is limited return freight back to NYC.</li>
+        <li>Hub analysis: Port Newark and Meadowlands generate the most empty legs because they are major import hubs — trucks arrive with loads from ships, but the return direction is less structured.</li>
+        <li>Geographically, the solution is to find businesses in Bethlehem/Allentown that need to ship goods back into the NY metro area — matching their outbound freight to our drivers' return legs.</li>
+        <li>Click any route line on the map to see detailed trip information.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">NY/NJ tri-state freight routes — current state</div>
+      <div class="legend">
+        <span><span class="dot" style="background:#3b6d11;width:22px;height:4px;border-radius:2px"></span>Loaded leg</span>
+        <span><span class="dot" style="background:#a32d2d;width:22px;height:4px;border-radius:2px"></span>Empty leg (deadhead)</span>
+        <span><span class="dot" style="background:#185fa5;width:10px;height:10px;border-radius:50%"></span>Hub / terminal</span>
+      </div>
+      <div class="map-box">
+        <svg id="routeMap" viewBox="0 0 700 440" width="100%"></svg>
+      </div>
+      <div class="route-info-box" id="routeInfo">Click any route line to see trip details.</div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">Hub performance summary</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Hub / terminal</th>
+            <th>Total trips</th>
+            <th>Empty legs</th>
+            <th>Empty rate</th>
+            <th>Priority</th>
+          </tr></thead>
+          <tbody id="hubTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TAB 4: OPTIMIZATION                                     -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div id="panel-optimization" class="panel">
+
+    <div class="tp-section">
+      <h3>📋 Talking points — Optimization</h3>
+      <ul class="tp-list">
+        <li>Load matching is the primary tool for reducing empty miles. The concept is simple: instead of a truck returning empty after a delivery, a dispatcher (or algorithm) finds a nearby shipper who needs freight moved in that direction.</li>
+        <li>A 0% match rate represents our current situation — no systematic load matching in place. A 55–65% rate is achievable within 3–6 months using a load board or basic dispatch software. A 90% rate represents best-in-class operations using AI-assisted freight matching platforms like DAT or Convoy.</li>
+        <li>At a realistic 55% match rate, the fleet saves approximately $978 per month, or nearly $11,700 per year — from a fleet of just 6 drivers.</li>
+        <li>The "matched load pairs" table shows exactly how this works in practice: a driver who drops a load in Bethlehem PA picks up a return load from a Bethlehem manufacturer rather than driving home empty.</li>
+        <li>The 6-month projection shows that even modest load matching creates significant compounding savings as dispatchers become more skilled at identifying backhaul opportunities.</li>
+      </ul>
+    </div>
+
+    <div class="slider-section">
+      <div class="slider-top">
+        <label for="matchSlider">Load match rate — drag to simulate optimization level</label>
+        <span class="slider-rate" id="matchLabel">55%</span>
+      </div>
+      <input type="range" min="0" max="90" step="5" value="55" id="matchSlider" oninput="updateOpt()">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px">
+        <span>0% — no matching (current)</span>
+        <span>55% — realistic near-term</span>
+        <span>90% — best in class</span>
+      </div>
+    </div>
+
+    <div class="saving-banner" id="savingBanner"></div>
+
+    <div class="opt-cols">
+      <div class="opt-card" style="border-left:4px solid var(--red)">
+        <h3 class="c-red">Before — current state</h3>
+        <div class="opt-row"><span>Total miles</span><span id="b-total"></span></div>
+        <div class="opt-row"><span>Empty miles</span><span id="b-empty" class="c-red"></span></div>
+        <div class="opt-row"><span>Empty rate</span><span id="b-pct" class="c-red"></span></div>
+        <div class="opt-row"><span>Monthly cost</span><span id="b-cost" class="c-red"></span></div>
+        <div class="opt-row"><span>Fully loaded trips</span><span id="b-trips"></span></div>
+      </div>
+      <div class="opt-card" style="border-left:4px solid var(--green)">
+        <h3 class="c-green">After — with load matching</h3>
+        <div class="opt-row"><span>Total miles</span><span id="a-total"></span></div>
+        <div class="opt-row"><span>Empty miles</span><span id="a-empty" class="c-green"></span></div>
+        <div class="opt-row"><span>Empty rate</span><span id="a-pct" class="c-green"></span></div>
+        <div class="opt-row"><span>Monthly cost</span><span id="a-cost" class="c-green"></span></div>
+        <div class="opt-row"><span>Fully loaded trips</span><span id="a-trips"></span></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Matched load pairs — how backhauls are assigned</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:12%">Driver</th>
+            <th style="width:22%">Outbound load</th>
+            <th style="width:22%">Backhaul matched</th>
+            <th style="width:12%">Miles saved</th>
+            <th style="width:12%">Cost saved</th>
+            <th style="width:12%">Match quality</th>
+            <th style="width:8%">Status</th>
+          </tr></thead>
+          <tbody id="matchTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">6-month cost projection — with vs without optimization</div>
+      <div style="position:relative;height:200px"><canvas id="projChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TAB 5: SUMMARY REPORT                                   -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div id="panel-print" class="panel">
+    <button class="do-print-btn" onclick="window.print()">Print this report (Ctrl+P / Cmd+P)</button>
+    <div class="print-report">
+
+      <div class="pr-header">
+        <h2>J. HAMMERHEAD TRUCKING LLC</h2>
+        <p>Empty Miles Tracker — NY/NJ/PA/CT Freight &nbsp;·&nbsp; 30-Day Study &nbsp;·&nbsp; 6 Drivers &nbsp;·&nbsp; 25 Trips</p>
+        <p style="margin-top:4px;font-size:12px;color:#999">Prepared for class presentation &nbsp;·&nbsp; April 2026</p>
+      </div>
+
+      <div class="pr-section">
+        <h3>What are empty miles?</h3>
+        <p style="font-size:13px;line-height:1.7;color:#333">Empty miles (also called "deadhead miles") refer to the distance a truck travels without carrying any freight. This happens when a driver delivers a load and then drives back to base — or to the next pickup — without a return load. In the trucking industry, the driver and truck still incur full operating costs (fuel, wear, driver wages) during those empty miles, but the carrier earns zero revenue. It is one of the most significant sources of inefficiency in freight logistics.</p>
+      </div>
+
+      <div class="pr-section">
+        <h3>Key findings — current state</h3>
+        <div class="pr-kpis">
+          <div class="pr-kpi"><div class="pr-kpi-label">Total miles driven</div><div class="pr-kpi-value" style="color:var(--blue)">2,329</div></div>
+          <div class="pr-kpi"><div class="pr-kpi-label">Empty miles</div><div class="pr-kpi-value" style="color:var(--red)">957</div></div>
+          <div class="pr-kpi"><div class="pr-kpi-label">Empty rate</div><div class="pr-kpi-value" style="color:var(--red)">41%</div></div>
+          <div class="pr-kpi"><div class="pr-kpi-label">Monthly cost of empty</div><div class="pr-kpi-value" style="color:var(--red)">$2,393</div></div>
+          <div class="pr-kpi"><div class="pr-kpi-label">Annual projection</div><div class="pr-kpi-value" style="color:var(--red)">$28,710</div></div>
+          <div class="pr-kpi"><div class="pr-kpi-label">Corridor avg empty rate</div><div class="pr-kpi-value" style="color:var(--amber)">35–40%</div></div>
+        </div>
+
+        <table class="pr-table">
+          <thead><tr><th>Hub</th><th>Trips</th><th>Empty legs</th><th>Empty rate</th><th>Priority</th></tr></thead>
+          <tbody>
+            <tr><td>Port Newark</td><td>6</td><td>5</td><td style="color:var(--red);font-weight:600">83%</td><td><span class="badge b-red">High</span></td></tr>
+            <tr><td>Meadowlands</td><td>5</td><td>3</td><td style="color:var(--red);font-weight:600">60%</td><td><span class="badge b-red">High</span></td></tr>
+            <tr><td>JFK Cargo</td><td>4</td><td>3</td><td style="color:var(--red);font-weight:600">75%</td><td><span class="badge b-red">High</span></td></tr>
+            <tr><td>Edison NJ</td><td>5</td><td>3</td><td style="color:var(--amber);font-weight:600">60%</td><td><span class="badge b-amber">Medium</span></td></tr>
+            <tr><td>Hunts Point</td><td>5</td><td>2</td><td style="color:var(--amber);font-weight:600">40%</td><td><span class="badge b-amber">Medium</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pr-section">
+        <h3>Can empty miles be eliminated?</h3>
+        <div class="pr-finding"><div class="pr-finding-num">1</div><div><strong>No — not entirely.</strong> Some empty miles are structurally unavoidable. When a truck delivers to a rural or one-directional market, there may simply be no return freight available. Regulatory limits (Hours of Service rules) also sometimes prevent waiting for a backhaul load.</div></div>
+        <div class="pr-finding"><div class="pr-finding-num">2</div><div><strong>Yes — significantly reducible.</strong> Industry research shows that systematic load matching can reduce empty miles by 40–60% in dense freight markets like NY/NJ. Best-in-class carriers achieve empty rates below 15%.</div></div>
+        <div class="pr-finding"><div class="pr-finding-num">3</div><div><strong>The NY/NJ corridor is ideal for optimization.</strong> High freight density in both directions — imports via Port Newark, outbound consumer goods and manufacturing — means backhaul opportunities are abundant. The problem is matching, not supply.</div></div>
+      </div>
+
+      <div class="pr-section">
+        <h3>Proposed solution — load matching</h3>
+        <div class="pr-rec">✓ <strong>Phase 1 (Month 1–2):</strong> Subscribe to a load board (DAT, Truckstop.com) — cost ~$150/month. Dispatchers manually identify backhaul loads for the worst-performing lanes (Port Newark → Bethlehem PA, Meadowlands → Albany NY). Target: 40% match rate.</div>
+        <div class="pr-rec">✓ <strong>Phase 2 (Month 3–4):</strong> Implement dispatch software with route optimization (e.g. Samsara, KeepTruckin). Automate backhaul suggestions. Target: 60% match rate.</div>
+        <div class="pr-rec">✓ <strong>Phase 3 (Month 5–6):</strong> Integrate with freight brokerage APIs for real-time load matching. Driver app notifications for available backhauls. Target: 75–80% match rate.</div>
+
+        <table class="pr-table" style="margin-top:14px">
+          <thead><tr><th>Scenario</th><th>Match rate</th><th>Monthly saving</th><th>Annual saving</th><th>Empty rate</th></tr></thead>
+          <tbody>
+            <tr><td>Current (no matching)</td><td>0%</td><td>$0</td><td>$0</td><td style="color:var(--red)">41.0%</td></tr>
+            <tr><td>Phase 1 — load board</td><td>40%</td><td>$958</td><td>$11,496</td><td style="color:var(--amber)">24.6%</td></tr>
+            <tr><td>Phase 2 — dispatch software</td><td>60%</td><td>$1,435</td><td>$17,220</td><td style="color:var(--amber)">16.4%</td></tr>
+            <tr><td>Phase 3 — automated matching</td><td>80%</td><td>$1,915</td><td>$22,980</td><td style="color:var(--green)">8.2%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pr-section">
+        <h3>Conclusion</h3>
+        <p style="font-size:13px;line-height:1.7;color:#333">Empty miles cannot be eliminated from freight operations, but they can be dramatically reduced through systematic load matching. For the NY/NJ/CT/PA corridor — one of the densest freight markets in North America — a realistic target of 55–60% load match rate is achievable within six months, reducing J. Hammerhead Trucking's empty rate from 41% to approximately 16–24%. At $2.50 per mile in operating costs, this translates to annual savings of $17,220–$22,980 for a 6-driver independent fleet. Scaled to a larger operation, the impact is proportionally greater. The technology exists, the freight density supports it, and the financial case is clear.</p>
+      </div>
+
+      <div class="pr-footer">
+        J. Hammerhead Trucking LLC &nbsp;·&nbsp; Empty Miles Tracker &nbsp;·&nbsp; NY/NJ/PA/CT Freight &nbsp;·&nbsp; Class Project &nbsp;·&nbsp; April 2026 &nbsp;·&nbsp; Data is illustrative and based on real route distances and industry benchmarks.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TAB 6: PROJECT JOURNEY                                  -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div id="panel-journey" class="panel">
+    <div class="card" style="max-width:780px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div class="card-title" style="margin-bottom:4px">Project journey</div>
+          <p style="font-size:13px;color:var(--muted)">How this project was scoped, built and developed — step by step.</p>
+        </div>
+        <button class="do-print-btn" style="font-size:12px;padding:7px 16px" onclick="window.print()">Print ↗</button>
+      </div>
+
+      <div style="position:relative;padding-left:28px">
+        <div style="position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:var(--border);border-radius:2px"></div>
+
+        <div style="position:relative;margin-bottom:28px">
+          <div style="position:absolute;left:-24px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">1</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px">Scoping the project</div>
+          <p style="font-size:13px;color:#444;line-height:1.7">The project started with a 3-hour build goal and the topic of "empty miles." We first narrowed down what was needed: a web app dashboard UI, built with JavaScript, focused on trucking and freight — specifically unloaded truck legs. We confirmed 3 hours was feasible for a well-scoped dashboard.</p>
+        </div>
+
+        <div style="position:relative;margin-bottom:28px">
+          <div style="position:absolute;left:-24px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">2</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px">First working prototype</div>
+          <p style="font-size:13px;color:#444;line-height:1.7">An initial interactive dashboard was built with mock data covering the core empty miles concept — KPI cards, a stacked bar chart, a donut chart by region, and a trip table with filters for date range, driver, and region. This gave a working foundation to react to.</p>
+        </div>
+
+        <div style="position:relative;margin-bottom:28px">
+          <div style="position:absolute;left:-24px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">3</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px">Making the data realistic</div>
+          <p style="font-size:13px;color:#444;line-height:1.7">The placeholder data was replaced with 6 named drivers (Marcus Webb, Sandra Kowalski, Darnell Pruitt, Carolyn Hutchins, Ray Thibodeau, Yvette Salgado), US-format phone numbers using the 555 prefix convention, and actual highway mileages between real US city pairs. A driver roster panel was added to the dashboard.</p>
+        </div>
+
+        <div style="position:relative;margin-bottom:28px">
+          <div style="position:absolute;left:-24px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">4</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px">Defining the problem and solution</div>
+          <p style="font-size:13px;color:#444;line-height:1.7">The key question was asked: can empty miles actually be eliminated? The honest answer — no, not entirely, but yes, significantly reducible. The US industry average sits around 35% empty miles, and well-optimized fleets get it to 15–20% using load matching, route optimization, and predictive dispatch. This became the intellectual backbone of the project.</p>
+        </div>
+
+        <div style="position:relative;margin-bottom:28px">
+          <div style="position:absolute;left:-24px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">5</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px">Localizing to NY/NJ</div>
+          <p style="font-size:13px;color:#444;line-height:1.7">Rather than keeping it generic, the focus was narrowed to the NY/NJ tri-state corridor — one of the densest freight markets in the US, with real anchor hubs: Port Newark, Hunts Point (Bronx), Meadowlands, Edison NJ, and JFK Cargo. This made the project far more credible and grounded for a class presentation.</p>
+        </div>
+
+        <div style="position:relative;margin-bottom:28px">
+          <div style="position:absolute;left:-24px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">6</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px">Building the three-tab app</div>
+          <p style="font-size:13px;color:#444;line-height:1.7">Everything was rebuilt around the NY/NJ market with three tabs forming a clear narrative arc: Dashboard (here's the problem), Route Map (here's where it's happening), and Optimization (here's the solution). The optimization tab included a live slider to simulate different load match rates and see real-time cost savings — the most compelling part of the presentation.</p>
+        </div>
+
+        <div style="position:relative;margin-bottom:28px">
+          <div style="position:absolute;left:-24px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">7</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px">Choosing the final format</div>
+          <p style="font-size:13px;color:#444;line-height:1.7">The best format for a novice was determined to be a single HTML file — no installs, no frameworks, just double-click and it opens in any browser. Simple to share, simple to print, works offline. A Word document would have lost all the interactive charts and maps.</p>
+        </div>
+
+        <div style="position:relative">
+          <div style="position:absolute;left:-24px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">8</div>
+          <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:5px">Final comprehensive build — delivered</div>
+          <p style="font-size:13px;color:#444;line-height:1.7">The complete six-tab standalone HTML application was delivered including: the Dashboard with full trip log, Driver Profiles with individual stats and a comparison chart, the interactive Route Map with clickable routes, the Optimization simulator with matched load pairs and a 6-month projection, a Summary Report designed to be printed, and this Project Journey page. Talking points for each tab were embedded directly so you always know what to say during your presentation.</p>
+          <div style="margin-top:12px;background:var(--success-bg);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--success-tx)">
+            <strong>The through-line:</strong> Moving from a vague problem ("empty miles are bad") to a specific, defensible, locally-grounded solution — load matching in the NY/NJ/CT/PA corridor can reduce J. Hammerhead Trucking's empty miles from 41% to under 17%, saving an estimated $17,220–$22,980 per year for a 6-driver independent fleet. That is a complete class project argument, backed by a working application.
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:28px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);text-align:center">
+        J. Hammerhead Trucking LLC &nbsp;·&nbsp; Empty Miles Tracker &nbsp;·&nbsp; Class Project &nbsp;·&nbsp; April 2026 &nbsp;·&nbsp; Built with Claude (Anthropic)
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TAB 7: DRIVER MOBILE APP                                -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div id="panel-mobile" class="panel">
+    <div class="tp-section">
+      <h3>📋 Talking points — Driver mobile app</h3>
+      <ul class="tp-list">
+        <li>J. Hammerhead operates this app as a two-sided system — the dispatcher works from the dashboard at the office, while each driver uses the mobile front end on their smartphone in the field.</li>
+        <li>The dispatcher monitors the fleet in real time, sources available backhaul loads from DAT Load Board or direct shipper relationships, and pushes an alert to the right driver at exactly the right moment — when they are finishing a delivery and about to make a routing decision.</li>
+        <li>The driver does not need to search for loads, call a broker, or monitor a load board while behind the wheel. They simply receive the alert, review the route, load details, load pay, and load source, and tap Accept or Decline in seconds.</li>
+        <li>Select any of the 6 drivers from the selector to see their personalized view — current trip, status, earnings, and any backhaul alerts waiting for them at their delivery point.</li>
+      </ul>
+    </div>
+
+    <!-- Dispatcher to driver flow diagram -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">How the system works — dispatcher to driver flow</div>
+      <div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0;padding:16px 0">
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:center;min-width:130px">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">Load sources</div>
+          <div style="background:#e8f1fb;border:1px solid #b5d4f4;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:600;color:#185fa5;text-align:center;width:120px">DAT Load Board</div>
+          <div style="background:#eaf3de;border:1px solid #c0dd97;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:600;color:#3b6d11;text-align:center;width:120px">Direct Shippers</div>
+          <div style="background:#faeeda;border:1px solid #fac775;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:600;color:#854f0b;text-align:center;width:120px">Freight Brokers</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:0 8px;margin-top:18px">
+          <div style="width:40px;height:2px;background:var(--border)"></div>
+          <div style="font-size:16px;color:var(--muted);margin-top:-6px">&#9654;</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;min-width:130px">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">J. Hammerhead</div>
+          <div style="background:#185fa5;border-radius:12px;padding:14px 16px;text-align:center;width:130px">
+            <div style="font-size:22px;margin-bottom:4px">&#128105;&#8205;&#128188;</div>
+            <div style="font-size:11px;font-weight:700;color:#fff">Dispatcher</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.8);margin-top:3px">Monitors dashboard · Sources loads · Matches drivers</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:0 8px;margin-top:18px">
+          <div style="width:40px;height:2px;background:var(--border)"></div>
+          <div style="font-size:16px;color:var(--muted);margin-top:-6px">&#9654;</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px;text-align:center;width:50px">Push alert</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;min-width:130px">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">FreightMatch App</div>
+          <div style="background:#1a1a1a;border-radius:16px;padding:10px;width:100px;text-align:center">
+            <div style="background:#f0f0f0;border-radius:10px;padding:8px 6px">
+              <div style="font-size:9px;font-weight:700;color:#185fa5;margin-bottom:4px">Backhaul available</div>
+              <div style="font-size:8px;color:#333;margin-bottom:6px">Bethlehem&#8594;Newark · 90mi · Load pay $225</div>
+              <div style="display:flex;gap:4px">
+                <div style="flex:1;background:#3b6d11;color:#fff;font-size:8px;font-weight:700;padding:3px;border-radius:4px;text-align:center">Accept</div>
+                <div style="flex:1;background:#fff;color:#a32d2d;font-size:8px;font-weight:700;padding:3px;border-radius:4px;text-align:center;border:1px solid #a32d2d">Decline</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:0 8px;margin-top:18px">
+          <div style="width:40px;height:2px;background:var(--border)"></div>
+          <div style="font-size:16px;color:var(--muted);margin-top:-6px">&#9654;</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px;text-align:center;width:50px">Driver taps</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;min-width:130px">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Outcome</div>
+          <div style="background:#eaf3de;border:1px solid #c0dd97;border-radius:12px;padding:14px 16px;text-align:center;width:130px">
+            <div style="font-size:22px;margin-bottom:4px">&#128667;</div>
+            <div style="font-size:11px;font-weight:700;color:#3b6d11">Loaded return</div>
+            <div style="font-size:10px;color:#3b6d11;margin-top:3px">Empty leg eliminated · Revenue generated</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:10px 14px;margin-top:8px;font-size:12px;color:var(--muted);text-align:center">
+        J. Hammerhead runs the system &nbsp;·&nbsp; The driver uses the front end &nbsp;·&nbsp; Together they eliminate the deadhead leg
+      </div>
+    </div>
+
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+      <!-- Driver selector -->
+      <div style="flex:1;min-width:220px">
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">Select driver</div>
+          <div id="mobileDriverList" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Fleet status</div>
+          <div id="fleetStatus" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+      </div>
+
+      <!-- Phone frame -->
+      <div style="flex:0 0 auto;display:flex;justify-content:center">
+        <div style="width:300px;background:#1a1a1a;border-radius:36px;padding:12px;box-shadow:0 8px 32px rgba(0,0,0,0.25)">
+          <!-- notch -->
+          <div style="background:#1a1a1a;border-radius:24px 24px 0 0;padding:8px 0 4px;display:flex;justify-content:center">
+            <div style="width:80px;height:6px;background:#333;border-radius:3px"></div>
+          </div>
+          <!-- screen -->
+          <div style="background:#f0f0f0;border-radius:24px;overflow:hidden;min-height:580px" id="phoneScreen">
+            <div style="background:#185fa5;padding:14px 16px 10px;color:#fff">
+              <div style="font-size:10px;opacity:0.8;margin-bottom:2px">FreightMatch Driver</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div id="ph-avatar" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700"></div>
+                <div>
+                  <div id="ph-name" style="font-size:14px;font-weight:700"></div>
+                  <div id="ph-status-bar" style="font-size:10px;opacity:0.85"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- current trip card -->
+            <div style="margin:10px 10px 0;background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">
+              <div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Current trip</div>
+              <div id="ph-trip-route" style="font-size:13px;font-weight:700;color:#1a1a18;margin-bottom:4px"></div>
+              <div style="display:flex;gap:8px;margin-bottom:8px">
+                <span id="ph-trip-miles" style="font-size:11px;color:#666"></span>
+                <span id="ph-trip-empty" style="font-size:11px"></span>
+              </div>
+              <!-- progress bar -->
+              <div style="height:5px;background:#e8e8e8;border-radius:3px;overflow:hidden;margin-bottom:6px">
+                <div id="ph-progress" style="height:100%;border-radius:3px;background:#185fa5;transition:width .4s"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:#888">
+                <span id="ph-origin-short"></span><span id="ph-dest-short"></span>
+              </div>
+            </div>
+
+            <!-- earnings -->
+            <div style="margin:8px 10px 0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+              <div style="background:#fff;border-radius:10px;padding:8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.07)">
+                <div style="font-size:9px;color:#888;font-weight:600">Today's revenue</div>
+                <div id="ph-earn-today" style="font-size:13px;font-weight:700;color:#1a1a18;margin-top:2px"></div>
+              </div>
+              <div style="background:#fff;border-radius:10px;padding:8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.07)">
+                <div style="font-size:9px;color:#888;font-weight:600">Week revenue</div>
+                <div id="ph-earn-week" style="font-size:13px;font-weight:700;color:#1a1a18;margin-top:2px"></div>
+              </div>
+              <div style="background:#fff;border-radius:10px;padding:8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.07)">
+                <div style="font-size:9px;color:#888;font-weight:600">Empty rate</div>
+                <div id="ph-earn-empty" style="font-size:13px;font-weight:700;margin-top:2px"></div>
+              </div>
+            </div>
+
+            <!-- backhaul alert -->
+            <div id="ph-alert" style="margin:8px 10px 0;background:#fff3cd;border:1px solid #f0a500;border-radius:12px;padding:10px;display:none">
+              <div style="font-size:9px;font-weight:700;color:#854f0b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Backhaul available nearby</div>
+              <div id="ph-alert-source" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:6px"></div>
+              <div id="ph-alert-route" style="font-size:12px;font-weight:700;color:#1a1a18;margin-bottom:2px"></div>
+              <div id="ph-alert-detail" style="font-size:10px;color:#555;margin-bottom:8px"></div>
+              <div style="display:flex;gap:6px">
+                <button onclick="acceptLoad()" style="flex:1;background:#3b6d11;color:#fff;border:none;border-radius:8px;padding:7px;font-size:11px;font-weight:700;cursor:pointer">Accept</button>
+                <button onclick="declineLoad()" style="flex:1;background:#fff;color:#a32d2d;border:1px solid #a32d2d;border-radius:8px;padding:7px;font-size:11px;font-weight:700;cursor:pointer">Decline</button>
+              </div>
+            </div>
+
+            <!-- accepted confirmation -->
+            <div id="ph-accepted" style="margin:8px 10px 0;background:#eaf3de;border:1px solid #3b6d11;border-radius:12px;padding:10px;display:none">
+              <div style="font-size:11px;font-weight:700;color:#3b6d11;margin-bottom:2px">Load accepted!</div>
+              <div id="ph-accepted-detail" style="font-size:10px;color:#444"></div>
+            </div>
+
+            <!-- declined -->
+            <div id="ph-declined" style="margin:8px 10px 0;background:#fcebeb;border:1px solid #a32d2d;border-radius:12px;padding:10px;display:none">
+              <div style="font-size:11px;font-weight:700;color:#a32d2d;margin-bottom:2px">Load declined</div>
+              <div style="font-size:10px;color:#444">Next available load will be shown when you arrive.</div>
+            </div>
+
+            <!-- trip history -->
+            <div style="margin:8px 10px 10px;background:#fff;border-radius:12px;padding:10px;box-shadow:0 1px 4px rgba(0,0,0,0.07)">
+              <div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Recent trips</div>
+              <div id="ph-history"></div>
+            </div>
+          </div>
+          <!-- home indicator -->
+          <div style="padding:8px 0 4px;display:flex;justify-content:center">
+            <div style="width:100px;height:4px;background:#555;border-radius:2px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- TAB 8: PREDICTIVE POSITIONING                           -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div id="panel-predict" class="panel">
+    <div class="tp-section">
+      <h3>📋 Talking points — Predictive positioning</h3>
+      <ul class="tp-list">
+        <li>Predictive positioning moves the solution from reactive to proactive. Instead of finding a backhaul after a driver has already delivered empty, the system analyzes historical trip patterns and predicts where empty legs are likely to occur before they happen.</li>
+        <li>Using each driver's last 30 days of trip data, the system identifies which lanes consistently generate empty return legs, which days of the week are highest risk, and which drivers need attention first.</li>
+        <li>Dispatchers receive a 7-day forward risk calendar — flagging high-risk days in red so they can pre-book return loads in advance rather than scrambling at the last minute.</li>
+        <li>This is the same principle used by companies like Uber Freight and Convoy at scale — the difference is that even a small fleet can benefit from basic pattern recognition on their own historical data.</li>
+      </ul>
+    </div>
+
+    <!-- Risk summary cards -->
+    <div class="kpis" id="predictKpis" style="margin-bottom:20px"></div>
+
+    <div class="two-col" style="margin-bottom:20px">
+      <!-- Driver risk table -->
+      <div class="card">
+        <div class="card-title">Driver risk profile — next 7 days</div>
+        <table>
+          <thead><tr>
+            <th style="width:28%">Driver</th>
+            <th style="width:22%">High-risk lane</th>
+            <th style="width:15%">Predicted empty</th>
+            <th style="width:15%">Risk level</th>
+            <th style="width:20%">Recommended action</th>
+          </tr></thead>
+          <tbody id="predictTable"></tbody>
+        </table>
+      </div>
+
+      <!-- 7 day calendar -->
+      <div class="card">
+        <div class="card-title">7-day empty mile risk calendar</div>
+        <div id="riskCalendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:12px"></div>
+        <div class="legend">
+          <span><span class="dot" style="background:#a32d2d"></span>High risk</span>
+          <span><span class="dot" style="background:#854f0b"></span>Medium risk</span>
+          <span><span class="dot" style="background:#3b6d11"></span>Low risk</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lane pattern analysis -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">Lane pattern analysis — empty mile frequency by route</div>
+      <div style="position:relative;height:220px"><canvas id="laneChart"></canvas></div>
+    </div>
+
+    <!-- Recommended actions -->
+    <div class="card">
+      <div class="card-title">Dispatcher action plan — next 7 days</div>
+      <div id="actionPlan" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
+    </div>
+  </div>
+
+</div><!-- /shell -->
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+const DRIVERS = [
+  {name:'Marcus Webb',      phone:'(201) 555-0184', cdl:'CDL-A · 8 yrs exp', base:'Kearny, NJ',     initials:'MW', color:'#185fa5'},
+  {name:'Sandra Kowalski',  phone:'(732) 555-0261', cdl:'CDL-A · 12 yrs exp',base:'Edison, NJ',     initials:'SK', color:'#3b6d11'},
+  {name:'Darnell Pruitt',   phone:'(718) 555-0347', cdl:'CDL-A · 5 yrs exp', base:'Bronx, NY',      initials:'DP', color:'#993c1d'},
+  {name:'Carolyn Hutchins', phone:'(908) 555-0129', cdl:'CDL-A · 15 yrs exp',base:'Union City, NJ', initials:'CH', color:'#854f0b'},
+  {name:'Ray Thibodeau',    phone:'(516) 555-0473', cdl:'CDL-A · 9 yrs exp', base:'Hempstead, NY',  initials:'RT', color:'#533ab7'},
+  {name:'Yvette Salgado',   phone:'(347) 555-0592', cdl:'CDL-A · 6 yrs exp', base:'Jamaica, NY',    initials:'YS', color:'#0f6e56'},
+];
+
+const HUBS = {
+  'Port Newark':   {x:195,y:220},'Hunts Point':  {x:268,y:140},
+  'Meadowlands':   {x:170,y:168},'Edison NJ':    {x:152,y:272},
+  'JFK Cargo':     {x:318,y:196},'Bethlehem PA': {x:58, y:218},
+  'Bridgeport CT': {x:402,y:100},'Albany NY':    {x:365,y:48},
+  'Allentown PA':  {x:68, y:280},'White Plains': {x:318,y:108},
+};
+
+const HUB_COLORS = {
+  'Port Newark':'#185fa5','Hunts Point':'#993c1d','Meadowlands':'#3b6d11',
+  'Edison NJ':'#854f0b','JFK Cargo':'#533ab7','Bethlehem PA':'#73726c',
+  'Bridgeport CT':'#0f6e56','Albany NY':'#ba7517','Allentown PA':'#638099','White Plains':'#a32d2d'
+};
+
+const TRIPS = [
+  {id:'TRP-001',d:0,o:'Port Newark',    dt:'Bethlehem PA',   tot:90,  emp:0,   hub:'Port Newark'},
+  {id:'TRP-002',d:1,o:'Hunts Point',    dt:'Bridgeport CT',  tot:68,  emp:0,   hub:'Hunts Point'},
+  {id:'TRP-003',d:2,o:'JFK Cargo',      dt:'White Plains',   tot:42,  emp:0,   hub:'JFK Cargo'},
+  {id:'TRP-004',d:3,o:'Edison NJ',      dt:'Allentown PA',   tot:60,  emp:0,   hub:'Edison NJ'},
+  {id:'TRP-005',d:4,o:'Meadowlands',    dt:'Albany NY',      tot:155, emp:0,   hub:'Meadowlands'},
+  {id:'TRP-006',d:5,o:'Port Newark',    dt:'Bridgeport CT',  tot:110, emp:0,   hub:'Port Newark'},
+  {id:'TRP-007',d:0,o:'Port Newark',    dt:'Allentown PA',   tot:75,  emp:0,   hub:'Port Newark'},
+  {id:'TRP-008',d:1,o:'Edison NJ',      dt:'Bridgeport CT',  tot:110, emp:0,   hub:'Edison NJ'},
+  {id:'TRP-009',d:2,o:'JFK Cargo',      dt:'Albany NY',      tot:165, emp:0,   hub:'JFK Cargo'},
+  {id:'TRP-010',d:3,o:'Meadowlands',    dt:'Bethlehem PA',   tot:82,  emp:0,   hub:'Meadowlands'},
+  {id:'TRP-011',d:4,o:'White Plains',   dt:'Port Newark',    tot:45,  emp:0,   hub:'Meadowlands'},
+  {id:'TRP-012',d:5,o:'Hunts Point',    dt:'Edison NJ',      tot:32,  emp:0,   hub:'Hunts Point'},
+  {id:'TRP-013',d:0,o:'Bethlehem PA',   dt:'Meadowlands',    tot:82,  emp:0,   hub:'Port Newark'},
+  {id:'TRP-014',d:1,o:'Albany NY',      dt:'White Plains',   tot:148, emp:0,   hub:'Hunts Point'},
+  {id:'TRP-015',d:2,o:'Allentown PA',   dt:'JFK Cargo',      tot:108, emp:0,   hub:'JFK Cargo'},
+  {id:'TRP-016',d:0,o:'Bethlehem PA',   dt:'Port Newark',    tot:90,  emp:90,  hub:'Port Newark'},
+  {id:'TRP-017',d:1,o:'Bridgeport CT',  dt:'Hunts Point',    tot:68,  emp:68,  hub:'Hunts Point'},
+  {id:'TRP-018',d:2,o:'White Plains',   dt:'JFK Cargo',      tot:42,  emp:42,  hub:'JFK Cargo'},
+  {id:'TRP-019',d:3,o:'Allentown PA',   dt:'Edison NJ',      tot:60,  emp:60,  hub:'Edison NJ'},
+  {id:'TRP-020',d:4,o:'Albany NY',      dt:'Meadowlands',    tot:155, emp:155, hub:'Meadowlands'},
+  {id:'TRP-021',d:5,o:'Bridgeport CT',  dt:'Port Newark',    tot:110, emp:110, hub:'Port Newark'},
+  {id:'TRP-022',d:0,o:'Allentown PA',   dt:'Port Newark',    tot:75,  emp:75,  hub:'Port Newark'},
+  {id:'TRP-023',d:1,o:'Bridgeport CT',  dt:'Edison NJ',      tot:110, emp:110, hub:'Hunts Point'},
+  {id:'TRP-024',d:2,o:'Albany NY',      dt:'JFK Cargo',      tot:165, emp:165, hub:'JFK Cargo'},
+  {id:'TRP-025',d:3,o:'Bethlehem PA',   dt:'Meadowlands',    tot:82,  emp:82,  hub:'Meadowlands'},
+];
+
+const MATCHES = [
+  {d:0,out:'Port Newark → Bethlehem PA',  back:'Bethlehem PA → Allentown PA', saved:68, q:'Excellent'},
+  {d:2,out:'JFK Cargo → White Plains',    back:'White Plains → Hunts Point',  saved:30, q:'Good'},
+  {d:3,out:'Edison NJ → Allentown PA',    back:'Allentown PA → Edison NJ',    saved:45, q:'Excellent'},
+  {d:1,out:'Bridgeport CT → JFK Cargo',   back:'JFK Cargo → Hunts Point',     saved:50, q:'Good'},
+  {d:4,out:'Albany NY → Meadowlands',     back:'Meadowlands → Bridgeport CT', saved:100,q:'Excellent'},
+  {d:0,out:'Port Newark → Allentown PA',  back:'Allentown PA → JFK Cargo',    saved:55, q:'Good'},
+  {d:2,out:'JFK Cargo → Albany NY',       back:'Albany NY → White Plains',    saved:110,q:'Excellent'},
+  {d:3,out:'Meadowlands → Bethlehem PA',  back:'Bethlehem PA → Port Newark',  saved:65, q:'Good'},
+  {d:5,out:'Bridgeport CT → Hunts Point', back:'Hunts Point → Edison NJ',     saved:45, q:'Fair'},
+  {d:0,out:'Bethlehem PA → Port Newark',  back:'Port Newark → Meadowlands',   saved:82, q:'Excellent'},
+  {d:4,out:'Port Newark → White Plains',  back:'White Plains → Bridgeport CT',saved:38, q:'Fair'},
+  {d:5,out:'Edison NJ → Bethlehem PA',    back:'Bethlehem PA → Meadowlands',  saved:40, q:'Good'},
+  {d:4,out:'Meadowlands → Bridgeport CT', back:'Bridgeport CT → Albany NY',   saved:70, q:'Good'},
+];
+
+const MAIN_HUBS = ['Port Newark','Hunts Point','Meadowlands','Edison NJ','JFK Cargo'];
+let barInst=null, donutInst=null, driverInst=null, projInst=null, mapDrawn=false;
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────
+function showTab(t) {
+  document.querySelectorAll('.tab').forEach((b,i) => {
+    b.classList.toggle('active', ['dashboard','value','drivers','map','optimization','mobile','predict','print','journey'][i] === t);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+  if (t==='map' && !mapDrawn) { drawMap(); mapDrawn=true; }
+  if (t==='optimization') updateOpt();
+  if (t==='drivers') renderDriverChart();
+  if (t==='mobile') initMobile();
+  if (t==='predict') initPredict();
+}
+
+// ── TAB 1: DASHBOARD ──────────────────────────────────────────────────
+function initDashboard() {
+  const tot = TRIPS.reduce((a,t)=>a+t.tot,0);
+  const emp = TRIPS.reduce((a,t)=>a+t.emp,0);
+  const pct = (emp/tot*100).toFixed(1);
+  document.getElementById('kpis').innerHTML = [
+    {label:'Total miles',   val:tot.toLocaleString(),           sub:'30-day period',          cls:''},
+    {label:'Empty miles',   val:emp.toLocaleString(),           sub:pct+'% of total',         cls:'c-red'},
+    {label:'Loaded miles',  val:(tot-emp).toLocaleString(),     sub:'revenue-generating',     cls:'c-green'},
+    {label:'Est. empty cost',val:'$'+Math.round(emp*2.50).toLocaleString(), sub:'@ $2.50/mi avg', cls:'c-red'},
+    {label:'Trips logged',  val:TRIPS.length,                   sub:'25 routes covered',      cls:''},
+  ].map(k=>`<div class="kpi">
+    <div class="kpi-label">${k.label}</div>
+    <div class="kpi-value ${k.cls}">${k.val}</div>
+    ${k.sub?`<div class="kpi-sub ${k.cls}">${k.sub}</div>`:''}
+  </div>`).join('');
+
+  const wkLoaded=[1820,2140,1950,2380], wkEmpty=[920,780,1050,830];
+  barInst = new Chart(document.getElementById('barChart'),{
+    type:'bar',
+    data:{labels:['Week 1','Week 2','Week 3','Week 4'],datasets:[
+      {label:'Loaded',data:wkLoaded,backgroundColor:'#3b6d11',borderRadius:3,stack:'s'},
+      {label:'Empty', data:wkEmpty, backgroundColor:'#a32d2d',borderRadius:3,stack:'s'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+' mi'}}},
+      scales:{x:{stacked:true,ticks:{font:{size:11}}},y:{stacked:true,ticks:{font:{size:11},callback:v=>v+'mi'}}}}
+  });
+
+  const hubEmp = MAIN_HUBS.map(h=>TRIPS.filter(t=>t.hub===h).reduce((a,t)=>a+t.emp,0));
+  const hubColors = MAIN_HUBS.map(h=>HUB_COLORS[h]);
+  const hubTotal = hubEmp.reduce((a,b)=>a+b,0);
+  document.getElementById('donutLegend').innerHTML = MAIN_HUBS.map((h,i)=>
+    `<span><span class="dot" style="background:${hubColors[i]}"></span>${h} ${Math.round(hubEmp[i]/hubTotal*100)}%</span>`
+  ).join('');
+  donutInst = new Chart(document.getElementById('donutChart'),{
+    type:'doughnut',
+    data:{labels:MAIN_HUBS,datasets:[{data:hubEmp,backgroundColor:hubColors,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}
+  });
+
+  // Sort drivers A-Z, then render trips grouped under each driver
+  const sortedDriverIndices = DRIVERS.map((d,i)=>i).sort((a,b)=>DRIVERS[a].name.localeCompare(DRIVERS[b].name));
+  let tableHTML = '';
+  sortedDriverIndices.forEach(di => {
+    const d = DRIVERS[di];
+    const driverTrips = TRIPS.filter(t=>t.d===di);
+    // Driver group header row
+    tableHTML += `<tr>
+      <td colspan="9" style="background:var(--bg);padding:8px 8px 6px;font-size:11px;font-weight:700;color:${d.color};letter-spacing:.3px;border-bottom:1px solid var(--border)">
+        <span style="display:inline-flex;align-items:center;gap:7px">
+          <span style="width:20px;height:20px;border-radius:50%;background:${d.color};color:#fff;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center">${d.initials}</span>
+          ${d.name} &nbsp;·&nbsp; ${d.phone} &nbsp;·&nbsp; ${driverTrips.length} trips
+        </span>
+      </td>
+    </tr>`;
+    // Driver's trips
+    driverTrips.forEach(t=>{
+      const p=t.tot?t.emp/t.tot:0;
+      const bc=p>=0.5?'b-red':p>0?'b-amber':'b-green';
+      const bt=p>=0.5?'high empty':p>0?'partial':'fully loaded';
+      const fc=p>=0.5?'#a32d2d':p>0?'#ba7517':'#3b6d11';
+      tableHTML += `<tr>
+        <td>${t.id}</td><td style="color:var(--muted);font-size:11px">${d.name.split(' ')[0]} ${d.name.split(' ')[1][0]}.</td>
+        <td>${t.o}</td><td>${t.dt}</td>
+        <td>${t.tot} mi</td><td>${t.emp} mi</td>
+        <td><div class="pbar"><div class="pbar-track"><div class="pbar-fill" style="width:${Math.round(p*100)}%;background:${fc}"></div></div><span style="font-size:11px;color:#888;min-width:28px">${Math.round(p*100)}%</span></div></td>
+        <td>${t.hub.split(' ')[0]}</td>
+        <td><span class="badge ${bc}">${bt}</span></td>
+      </tr>`;
+    });
+  });
+  document.getElementById('tripTable').innerHTML = tableHTML;
+}
+
+// ── TAB 2: DRIVER PROFILES ────────────────────────────────────────────
+function initDriverProfiles() {
+  document.getElementById('driverGrid').innerHTML = DRIVERS.map((d,i)=>{
+    const myTrips = TRIPS.filter(t=>t.d===i);
+    const tot = myTrips.reduce((a,t)=>a+t.tot,0);
+    const emp = myTrips.reduce((a,t)=>a+t.emp,0);
+    const pct = tot ? Math.round(emp/tot*100) : 0;
+    const loaded = tot-emp;
+    const fc = pct>=50?'#a32d2d':pct>=30?'#854f0b':'#3b6d11';
+    return `<div class="driver-card">
+      <div class="driver-top">
+        <div class="avatar" style="background:${d.color}">${d.initials}</div>
+        <div>
+          <div class="driver-name">${d.name}</div>
+          <div class="driver-phone">${d.phone}</div>
+          <div style="font-size:11px;color:#888;margin-top:2px">${d.cdl} &nbsp;·&nbsp; ${d.base}</div>
+        </div>
+      </div>
+      <div class="driver-stats">
+        <div class="dstat"><div class="dstat-label">Trips</div><div class="dstat-value">${myTrips.length}</div></div>
+        <div class="dstat"><div class="dstat-label">Total mi</div><div class="dstat-value">${tot}</div></div>
+        <div class="dstat"><div class="dstat-label">Loaded mi</div><div class="dstat-value c-green">${loaded}</div></div>
+        <div class="dstat"><div class="dstat-label">Empty mi</div><div class="dstat-value c-red">${emp}</div></div>
+      </div>
+      <div class="driver-bar">
+        <div class="driver-bar-label"><span>Empty rate</span><span style="color:${fc};font-weight:700">${pct}%</span></div>
+        <div class="driver-bar-track"><div class="driver-bar-fill" style="width:${pct}%;background:${fc}"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderDriverChart() {
+  if (driverInst) return;
+  const names = DRIVERS.map(d=>d.name.split(' ')[0]+' '+d.name.split(' ')[1][0]+'.');
+  const empPcts = DRIVERS.map((d,i)=>{
+    const t=TRIPS.filter(tr=>tr.d===i); const tot=t.reduce((a,x)=>a+x.tot,0); const emp=t.reduce((a,x)=>a+x.emp,0);
+    return tot?Math.round(emp/tot*100):0;
+  });
+  driverInst = new Chart(document.getElementById('driverChart'),{
+    type:'bar',
+    data:{labels:names,datasets:[{
+      label:'Empty %',data:empPcts,
+      backgroundColor:empPcts.map(p=>p>=50?'#a32d2d':p>=30?'#854f0b':'#3b6d11'),
+      borderRadius:4
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+'% empty miles'}}},
+      scales:{x:{max:100,ticks:{font:{size:11},callback:v=>v+'%'}},y:{ticks:{font:{size:11}}}}}
+  });
+}
+
+// ── TAB 3: ROUTE MAP ──────────────────────────────────────────────────
+function drawMap() {
+  const svg = document.getElementById('routeMap');
+  const ns = 'http://www.w3.org/2000/svg';
+  svg.innerHTML = '';
+
+  // defs
+  const defs = document.createElementNS(ns,'defs');
+  ['loaded','empty'].forEach(type=>{
+    const m = document.createElementNS(ns,'marker');
+    m.setAttribute('id','arr-'+type); m.setAttribute('markerWidth','7'); m.setAttribute('markerHeight','7');
+    m.setAttribute('refX','6'); m.setAttribute('refY','3.5'); m.setAttribute('orient','auto');
+    const p = document.createElementNS(ns,'path');
+    p.setAttribute('d','M0,0 L0,7 L7,3.5 z');
+    p.setAttribute('fill',type==='loaded'?'#3b6d11':'#a32d2d');
+    m.appendChild(p); defs.appendChild(m);
+  });
+  svg.appendChild(defs);
+
+  // background
+  const rect = document.createElementNS(ns,'rect');
+  rect.setAttribute('width','700'); rect.setAttribute('height','440'); rect.setAttribute('fill','#eef2f7');
+  svg.appendChild(rect);
+
+  // state label
+  const lbl = document.createElementNS(ns,'text');
+  lbl.setAttribute('x','350'); lbl.setAttribute('y','425'); lbl.setAttribute('text-anchor','middle');
+  lbl.setAttribute('font-size','11'); lbl.setAttribute('fill','#8a8a85'); lbl.setAttribute('font-family','sans-serif');
+  lbl.textContent='NY · NJ · PA · CT freight corridor — click any route for details';
+  svg.appendChild(lbl);
+
+  // routes
+  TRIPS.forEach((t,idx)=>{
+    const o=HUBS[t.o], d=HUBS[t.dt];
+    if(!o||!d) return;
+    const isEmpty = t.emp > 0;
+    const color = isEmpty?'#a32d2d':'#3b6d11';
+    const offset = ((idx%3)-1)*18;
+    const mx=(o.x+d.x)/2+offset, my=(o.y+d.y)/2-Math.abs(offset)*0.8;
+    const pathD = `M${o.x},${o.y} Q${mx},${my} ${d.x},${d.y}`;
+
+    // visible path
+    const path = document.createElementNS(ns,'path');
+    path.setAttribute('d',pathD);
+    path.setAttribute('stroke',color); path.setAttribute('stroke-width','2.5');
+    path.setAttribute('fill','none'); path.setAttribute('opacity','0.72');
+    path.setAttribute('marker-end',`url(#arr-${isEmpty?'empty':'loaded'})`);
+    path.setAttribute('pointer-events','none');
+    svg.appendChild(path);
+
+    // invisible wide hit area for easy clicking
+    const hitPath = document.createElementNS(ns,'path');
+    hitPath.setAttribute('d',pathD);
+    hitPath.setAttribute('stroke','transparent');
+    hitPath.setAttribute('stroke-width','18');
+    hitPath.setAttribute('fill','none');
+    hitPath.style.cursor='pointer';
+    hitPath.addEventListener('mouseenter',()=>{ path.setAttribute('opacity','1'); path.setAttribute('stroke-width','4'); });
+    hitPath.addEventListener('mouseleave',()=>{ path.setAttribute('opacity','0.72'); path.setAttribute('stroke-width','2.5'); });
+    hitPath.addEventListener('click',()=>{
+      const statusText = isEmpty ? `<span style="color:#a32d2d;font-weight:600">Deadhead return — ${t.emp} mi fully empty (100%)</span>` : `<span style="color:#3b6d11;font-weight:600">Fully loaded — 0 mi empty</span>`;
+      document.getElementById('routeInfo').innerHTML =
+        `<strong>${t.id}</strong> &nbsp;·&nbsp; ${DRIVERS[t.d].name} &nbsp;·&nbsp; ${t.o} → ${t.dt} &nbsp;·&nbsp; ${t.tot} mi total &nbsp;·&nbsp; ${statusText}`;
+    });
+    svg.appendChild(hitPath);
+  });
+
+  // hubs
+  Object.entries(HUBS).forEach(([name,pos])=>{
+    const g = document.createElementNS(ns,'g');
+    g.setAttribute('transform',`translate(${pos.x},${pos.y})`);
+    const c = document.createElementNS(ns,'circle');
+    c.setAttribute('r','8'); c.setAttribute('fill',HUB_COLORS[name]||'#888');
+    c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','2');
+    const lbl2 = document.createElementNS(ns,'text');
+    lbl2.setAttribute('x','12'); lbl2.setAttribute('y','4');
+    lbl2.setAttribute('font-size','10.5'); lbl2.setAttribute('fill','#222');
+    lbl2.setAttribute('font-family','sans-serif'); lbl2.setAttribute('font-weight','600');
+    lbl2.textContent=name;
+    g.appendChild(c); g.appendChild(lbl2); svg.appendChild(g);
+  });
+
+  // hub table
+  document.getElementById('hubTable').innerHTML = MAIN_HUBS.map(h=>{
+    const trips=TRIPS.filter(t=>t.hub===h);
+    const empLegs=trips.filter(t=>t.emp>0).length;
+    const pct=trips.length?Math.round(empLegs/trips.length*100):0;
+    const bc=pct>=60?'b-red':pct>=40?'b-amber':'b-green';
+    const pri=pct>=60?'High':pct>=40?'Medium':'Low';
+    const fc=pct>=60?'#a32d2d':pct>=40?'#854f0b':'#3b6d11';
+    return `<tr>
+      <td style="font-weight:600">${h}</td>
+      <td>${trips.length}</td><td>${empLegs}</td>
+      <td style="color:${fc};font-weight:700">${pct}%</td>
+      <td><span class="badge ${bc}">${pri}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── TAB 4: OPTIMIZATION ───────────────────────────────────────────────
+function updateOpt() {
+  const rate = parseInt(document.getElementById('matchSlider').value);
+  document.getElementById('matchLabel').textContent = rate+'%';
+  const tot=TRIPS.reduce((a,t)=>a+t.tot,0);
+  const emp=TRIPS.reduce((a,t)=>a+t.emp,0);
+  const saved=Math.round(emp*rate/100);
+  const newEmp=emp-saved;
+  const newPct=(newEmp/tot*100).toFixed(1);
+  const costB=Math.round(emp*2.50);
+  const costA=Math.round(newEmp*2.50);
+  const costSaved=costB-costA;
+  const tripsB=TRIPS.filter(t=>t.emp===0).length;
+  const tripsA=tripsB+Math.round(TRIPS.filter(t=>t.emp>0).length*rate/100);
+
+  document.getElementById('savingBanner').innerHTML=`
+    <span class="saving-label">Monthly cost saving at ${rate}% load match rate</span>
+    <span class="saving-value">$${costSaved.toLocaleString()} / month</span>`;
+
+  const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
+  set('b-total', tot.toLocaleString()+' mi'); set('b-empty', emp.toLocaleString()+' mi');
+  set('b-pct',(emp/tot*100).toFixed(1)+'%'); set('b-cost','$'+costB.toLocaleString());
+  set('b-trips',tripsB+' / '+TRIPS.length+' trips');
+  set('a-total',tot.toLocaleString()+' mi'); set('a-empty',newEmp.toLocaleString()+' mi');
+  set('a-pct',newPct+'%'); set('a-cost','$'+costA.toLocaleString());
+  set('a-trips',tripsA+' / '+TRIPS.length+' trips');
+
+  const visMatches = MATCHES.slice(0, Math.ceil(MATCHES.length*rate/90));
+  const qColor={Excellent:'b-green',Good:'b-amber',Fair:'b-red'};
+  document.getElementById('matchTable').innerHTML = visMatches.map(m=>`<tr>
+    <td>${DRIVERS[m.d].name.split(' ')[0]}</td>
+    <td>${m.out}</td><td>${m.back}</td>
+    <td style="color:#3b6d11;font-weight:600">${m.saved} mi</td>
+    <td style="color:#3b6d11;font-weight:600">$${Math.round(m.saved*2.50)}</td>
+    <td><span class="badge ${qColor[m.q]}">${m.q}</span></td>
+    <td><span class="badge b-green">matched</span></td>
+  </tr>`).join('');
+
+  const months=['Jan','Feb','Mar','Apr','May','Jun'];
+  const projB=months.map((_,i)=>Math.round(costB*(1+i*0.025)));
+  const projA=months.map((_,i)=>Math.round(costA*(1+i*0.025)));
+  if(projInst) projInst.destroy();
+  projInst = new Chart(document.getElementById('projChart'),{
+    type:'line',
+    data:{labels:months,datasets:[
+      {label:'Without optimization',data:projB,borderColor:'#a32d2d',backgroundColor:'rgba(163,45,45,0.07)',tension:0.35,fill:true,pointRadius:4,pointBackgroundColor:'#a32d2d'},
+      {label:'With load matching',  data:projA,borderColor:'#3b6d11',backgroundColor:'rgba(59,109,17,0.07)', tension:0.35,fill:true,pointRadius:4,pointBackgroundColor:'#3b6d11'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{size:11},boxWidth:12,padding:14}}},
+      scales:{y:{ticks:{font:{size:11},callback:v=>'$'+Math.round(v/1000)+'k'}}}}
+  });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+initDashboard();
+initDriverProfiles();
+
+// ── TAB 7: DRIVER MOBILE APP ──────────────────────────────────────────
+const DRIVER_TRIPS = DRIVERS.map((_,i) => TRIPS.filter(t=>t.d===i));
+const BACKHAULS = [
+  {route:'Bethlehem PA → Port Newark',   miles:90,  bonus:'$225', detail:'Steel parts, 18 pallets · Pickup in 1.5 hrs', source:'Direct Shipper — Bethlehem Steel Supply Co.', sourceColor:'#3b6d11'},
+  {route:'Bridgeport CT → Hunts Point',  miles:68,  bonus:'$170', detail:'Food distribution, 22 pallets · Pickup in 2 hrs', source:'DAT Load Board', sourceColor:'#185fa5'},
+  {route:'White Plains → JFK Cargo',     miles:42,  bonus:'$105', detail:'Retail goods, 14 pallets · Pickup in 45 min', source:'Direct Shipper — Albany Freight Terminal', sourceColor:'#3b6d11'},
+  {route:'Allentown PA → Edison NJ',     miles:60,  bonus:'$150', detail:'Auto parts, 20 pallets · Pickup in 1 hr', source:'DAT Load Board', sourceColor:'#185fa5'},
+  {route:'Albany NY → Meadowlands',      miles:155, bonus:'$388', detail:'Building materials, 26 pallets · Pickup in 3 hrs', source:'Direct Shipper — Hudson Valley Distributors', sourceColor:'#3b6d11'},
+  {route:'Bridgeport CT → Port Newark',  miles:110, bonus:'$275', detail:'Retail returns, 18 pallets · Pickup in 2 hrs', source:'DAT Load Board', sourceColor:'#185fa5'},
+];
+const STATUSES = ['En route','Loading','Delivering','Available','On break'];
+let mobileInit=false, selectedDriver=0, loadState='pending';
+
+function initMobile() {
+  if (mobileInit) return;
+  mobileInit = true;
+  // build driver selector
+  document.getElementById('mobileDriverList').innerHTML = DRIVERS.map((d,i)=>`
+    <div onclick="selectMobileDriver(${i})" id="msel-${i}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;border:1.5px solid ${i===0?'var(--blue)':'var(--border)'};background:${i===0?'#e8f1fb':'var(--card)'}">
+      <div style="width:32px;height:32px;border-radius:50%;background:${d.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">${d.initials}</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">${d.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${d.phone}</div>
+      </div>
+    </div>`).join('');
+  // fleet status
+  document.getElementById('fleetStatus').innerHTML = DRIVERS.map((d,i)=>{
+    const st = STATUSES[i % STATUSES.length];
+    const sc = st==='En route'?'#185fa5':st==='Delivering'?'#3b6d11':st==='Available'?'#854f0b':'#73726c';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 0;border-bottom:0.5px solid var(--border)">
+      <span style="font-weight:500">${d.name.split(' ')[0]}</span>
+      <span style="font-size:10px;font-weight:600;color:${sc};background:${sc}18;padding:2px 8px;border-radius:20px">${st}</span>
+    </div>`;
+  }).join('');
+  renderPhone(0);
+}
+
+function selectMobileDriver(i) {
+  selectedDriver = i;
+  loadState = 'pending';
+  document.querySelectorAll('[id^="msel-"]').forEach((el,j)=>{
+    el.style.border = j===i ? '1.5px solid var(--blue)' : '1.5px solid var(--border)';
+    el.style.background = j===i ? '#e8f1fb' : 'var(--card)';
+  });
+  renderPhone(i);
+}
+
+function renderPhone(i) {
+  const d = DRIVERS[i];
+  const myTrips = DRIVER_TRIPS[i];
+  const tot = myTrips.reduce((a,t)=>a+t.tot,0);
+  const emp = myTrips.reduce((a,t)=>a+t.emp,0);
+  const pct = tot ? Math.round(emp/tot*100) : 0;
+  const currentTrip = myTrips[myTrips.length-1] || myTrips[0];
+  const progress = Math.floor(Math.random()*60)+20;
+  const earnToday = '$'+(Math.round((currentTrip.tot - currentTrip.emp)*2.50));
+  const earnWeek  = '$'+(Math.round((tot - emp)*2.50 * 0.4));
+  const empColor  = pct>=50?'#a32d2d':pct>=30?'#854f0b':'#3b6d11';
+  const backhaul  = BACKHAULS[i];
+  const hasAlert  = currentTrip.emp > 0;
+
+  document.getElementById('ph-avatar').textContent = d.initials;
+  document.getElementById('ph-avatar').style.background = d.color+'55';
+  document.getElementById('ph-name').textContent = d.name;
+  document.getElementById('ph-status-bar').textContent = STATUSES[i % STATUSES.length] + ' · ' + d.base;
+  document.getElementById('ph-trip-route').textContent = currentTrip.o + ' → ' + currentTrip.dt;
+  document.getElementById('ph-trip-miles').textContent = currentTrip.tot + ' mi total';
+  document.getElementById('ph-trip-empty').textContent = currentTrip.emp > 0 ? '⚠ Return empty' : '✓ Loaded return';
+  document.getElementById('ph-trip-empty').style.color = currentTrip.emp > 0 ? '#a32d2d' : '#3b6d11';
+  document.getElementById('ph-progress').style.width = progress + '%';
+  document.getElementById('ph-origin-short').textContent = currentTrip.o.split(',')[0].split(' ')[0];
+  document.getElementById('ph-dest-short').textContent   = currentTrip.dt.split(',')[0].split(' ')[0];
+  document.getElementById('ph-earn-today').textContent = earnToday;
+  document.getElementById('ph-earn-week').textContent  = earnWeek;
+  document.getElementById('ph-earn-empty').textContent = pct + '%';
+  document.getElementById('ph-earn-empty').style.color = empColor;
+
+  // history
+  document.getElementById('ph-history').innerHTML = myTrips.slice(-3).reverse().map(t=>{
+    const p = t.tot ? Math.round(t.emp/t.tot*100) : 0;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid #eee;font-size:10px">
+      <span style="color:#444">${t.o.split(',')[0]} → ${t.dt.split(',')[0]}</span>
+      <span style="font-weight:600;color:${p>=50?'#a32d2d':p>0?'#854f0b':'#3b6d11'}">${p}% empty</span>
+    </div>`;
+  }).join('');
+
+  // alert visibility
+  document.getElementById('ph-alert').style.display    = (hasAlert && loadState==='pending') ? 'block' : 'none';
+  document.getElementById('ph-accepted').style.display = loadState==='accepted' ? 'block' : 'none';
+  document.getElementById('ph-declined').style.display = loadState==='declined' ? 'block' : 'none';
+  if (hasAlert && loadState==='pending') {
+    document.getElementById('ph-alert-source').textContent  = backhaul.source;
+    document.getElementById('ph-alert-source').style.background = backhaul.sourceColor+'18';
+    document.getElementById('ph-alert-source').style.color = backhaul.sourceColor;
+    document.getElementById('ph-alert-route').textContent  = backhaul.route;
+    document.getElementById('ph-alert-detail').textContent = backhaul.miles + ' mi · Load pay ' + backhaul.bonus + ' · ' + backhaul.detail;
+  }
+}
+
+function acceptLoad() {
+  loadState = 'accepted';
+  const b = BACKHAULS[selectedDriver];
+  document.getElementById('ph-accepted-detail').textContent = 'Source: '+b.source+' · '+b.route+' · '+b.miles+' mi · Load pay '+b.bonus;
+  document.getElementById('ph-alert').style.display    = 'none';
+  document.getElementById('ph-accepted').style.display = 'block';
+  document.getElementById('ph-declined').style.display = 'none';
+  document.getElementById('ph-trip-empty').textContent = '✓ Backhaul confirmed';
+  document.getElementById('ph-trip-empty').style.color = '#3b6d11';
+}
+
+function declineLoad() {
+  loadState = 'declined';
+  document.getElementById('ph-alert').style.display    = 'none';
+  document.getElementById('ph-accepted').style.display = 'none';
+  document.getElementById('ph-declined').style.display = 'block';
+}
+
+// ── TAB 8: PREDICTIVE POSITIONING ────────────────────────────────────
+let laneChartInst = null, predictInit = false;
+
+const PREDICT_DATA = [
+  {dIdx:0, lane:'Port Newark → Bethlehem PA', freq:3, emptyPct:76, risk:'High',   days:[1,3,5], action:'Pre-book Bethlehem → Allentown return load for Days 1, 3, 5'},
+  {dIdx:1, lane:'Bridgeport CT → JFK Cargo',  freq:2, emptyPct:63, risk:'High',   days:[2,5],   action:'Contact Bridgeport shippers for southbound loads on Days 2 and 5'},
+  {dIdx:2, lane:'JFK Cargo → Albany NY',      freq:2, emptyPct:67, risk:'High',   days:[3,6],   action:'Reserve Albany → White Plains backhaul slots in advance'},
+  {dIdx:3, lane:'Meadowlands → Bethlehem PA', freq:2, emptyPct:79, risk:'High',   days:[1,4],   action:'Pair with Marcus Webb on Day 1 — coordinate shared return lane'},
+  {dIdx:4, lane:'Albany NY → Meadowlands',    freq:2, emptyPct:65, risk:'Medium', days:[2,6],   action:'Check Meadowlands outbound schedule — fill return with hub transfer'},
+  {dIdx:5, lane:'Edison NJ → Bethlehem PA',   freq:1, emptyPct:69, risk:'Medium', days:[4],     action:'Single high-risk day — pre-arrange Bethlehem pickup 48hrs ahead'},
+];
+
+const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+function initPredict() {
+  if (predictInit) return;
+  predictInit = true;
+
+  // KPIs
+  const highRisk   = PREDICT_DATA.filter(p=>p.risk==='High').length;
+  const totalDays  = PREDICT_DATA.reduce((a,p)=>a+p.days.length,0);
+  const potentialSave = Math.round(PREDICT_DATA.reduce((a,p)=>a+(p.freq * 75 * 2.50),0));
+  document.getElementById('predictKpis').innerHTML = [
+    {label:'High-risk drivers',    val:highRisk,    sub:'require immediate action', cls:'c-red'},
+    {label:'At-risk days (7-day)', val:totalDays,   sub:'predicted empty legs',    cls:'c-amber'},
+    {label:'Drivers monitored',    val:DRIVERS.length, sub:'full fleet coverage',  cls:''},
+    {label:'Potential monthly save',val:'$'+potentialSave.toLocaleString(), sub:'if all mitigated', cls:'c-green'},
+  ].map(k=>`<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-value ${k.cls}">${k.val}</div><div class="kpi-sub ${k.cls}">${k.sub}</div></div>`).join('');
+
+  // driver risk table
+  document.getElementById('predictTable').innerHTML = PREDICT_DATA.map(p=>{
+    const d = DRIVERS[p.dIdx];
+    const bc = p.risk==='High'?'b-red':'b-amber';
+    const act = p.risk==='High'?'Pre-book now':'Monitor';
+    return `<tr>
+      <td><span style="font-weight:600">${d.name.split(' ')[0]} ${d.name.split(' ')[1][0]}.</span></td>
+      <td style="font-size:11px">${p.lane}</td>
+      <td style="font-weight:600;color:${p.risk==='High'?'#a32d2d':'#854f0b'}">${p.emptyPct}%</td>
+      <td><span class="badge ${bc}">${p.risk}</span></td>
+      <td><span class="badge ${p.risk==='High'?'b-red':'b-green'}">${act}</span></td>
+    </tr>`;
+  }).join('');
+
+  // 7-day risk calendar
+  const dayRisk = [0,0,0,0,0,0,0];
+  PREDICT_DATA.forEach(p => p.days.forEach(d => dayRisk[d-1]++));
+  document.getElementById('riskCalendar').innerHTML = DAY_LABELS.map((lbl,i)=>{
+    const r = dayRisk[i];
+    const bg = r>=3?'#a32d2d':r>=2?'#854f0b':r>=1?'#f0a500':'#3b6d11';
+    const tx = '#fff';
+    return `<div style="background:${bg};color:${tx};border-radius:8px;padding:10px 4px;text-align:center">
+      <div style="font-size:10px;font-weight:600;opacity:0.85">${lbl}</div>
+      <div style="font-size:18px;font-weight:700;margin:4px 0">${r}</div>
+      <div style="font-size:9px;opacity:0.85">${r===0?'clear':r===1?'1 risk':r+' risks'}</div>
+    </div>`;
+  }).join('');
+
+  // lane chart
+  const lanes = PREDICT_DATA.map(p=>p.lane.split(' → ')[0]+'→'+p.lane.split(' → ')[1].split(' ')[0]);
+  const freqs  = PREDICT_DATA.map(p=>p.freq);
+  const empPcts= PREDICT_DATA.map(p=>p.emptyPct);
+  const ctx = document.getElementById('laneChart').getContext('2d');
+  if (laneChartInst) laneChartInst.destroy();
+  laneChartInst = new Chart(ctx, {
+    type:'bar',
+    data:{labels:lanes, datasets:[
+      {label:'Empty trip frequency (last 30 days)', data:freqs,   backgroundColor:'#a32d2d', borderRadius:3, yAxisID:'y'},
+      {label:'Avg empty %',                         data:empPcts, backgroundColor:'#185fa5', borderRadius:3, yAxisID:'y1'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{size:11},boxWidth:10}}},
+      scales:{
+        x:{ticks:{font:{size:10},maxRotation:20}},
+        y:{position:'left', title:{display:true,text:'Frequency',font:{size:10}}, ticks:{font:{size:10}}},
+        y1:{position:'right',title:{display:true,text:'Empty %',font:{size:10}}, ticks:{font:{size:10},callback:v=>v+'%'}, grid:{drawOnChartArea:false}}
+      }}
+  });
+
+  // action plan
+  document.getElementById('actionPlan').innerHTML = PREDICT_DATA.map((p,i)=>{
+    const d = DRIVERS[p.dIdx];
+    const bc = p.risk==='High'?'#fcebeb':'#faeeda';
+    const tc = p.risk==='High'?'#a32d2d':'#854f0b';
+    return `<div style="background:${bc};border-left:4px solid ${tc};border-radius:0 8px 8px 0;padding:10px 14px;display:flex;gap:12px;align-items:flex-start">
+      <div style="width:22px;height:22px;border-radius:50%;background:${tc};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${i+1}</div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:${tc};margin-bottom:2px">${d.name} — ${p.risk} risk · Days ${p.days.join(', ')}</div>
+        <div style="font-size:12px;color:#333">${p.action}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
