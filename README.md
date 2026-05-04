@@ -1,5 +1,9 @@
 # EmptyMiles
 
+## Demo
+
+![EmptyMiles Dashboard](https://github.com/judeolinmah-rgb/empty-miles-tracker/raw/main/22776a14-8374-4788-8fcf-8d3a9b3cac39.png)
+
 ## Overview
 EmptyMiles is a fleet optimization tool designed to help independent truck drivers reduce deadhead (empty) miles — a problem that can account for **20–35% of lost annual revenue**.
 
