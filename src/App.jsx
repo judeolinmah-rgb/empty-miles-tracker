@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Dashboard from './components/Dashboard'
 
 const TABS = [
   { id: 'dashboard',    label: 'Dashboard' },
@@ -17,7 +18,7 @@ function App() {
 
   return (
     <div style={{ fontFamily: 'Segoe UI, system-ui, sans-serif', background: '#f8f7f4', minHeight: '100vh' }}>
-      
+
       {/* Header */}
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 16px 0' }}>
         <h1 style={{ fontSize: 22, fontWeight: 600 }}>J. HAMMERHEAD TRUCKING LLC</h1>
@@ -53,10 +54,15 @@ function App() {
 
       {/* Panel */}
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
-        <h2 style={{ fontSize: 18, fontWeight: 600, color: '#1a1a18' }}>
-          {TABS.find(t => t.id === activeTab)?.label}
-        </h2>
-        <p style={{ color: '#6b6b66', marginTop: 8 }}>This tab is coming soon.</p>
+        {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab !== 'dashboard' && (
+          <>
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: '#1a1a18' }}>
+              {TABS.find(t => t.id === activeTab)?.label}
+            </h2>
+            <p style={{ color: '#6b6b66', marginTop: 8 }}>This tab is coming soon.</p>
+          </>
+        )}
       </div>
 
     </div>
