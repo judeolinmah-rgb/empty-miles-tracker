@@ -1,10 +1,12 @@
-import { TRIPS, HUBS, HUB_COLORS, MAIN_HUBS } from '../data'
+import { useState } from 'react'
+import { TRIPS, HUBS, HUB_COLORS, MAIN_HUBS, DRIVERS } from '../data'
 
 export default function RouteMap() {
-  const ns = 'http://www.w3.org/2000/svg'
+  const [tooltip, setTooltip] = useState(null)
 
   return (
     <div>
+
       {/* Legend */}
       <div style={{ display: 'flex', gap: 20, marginBottom: 14, fontSize: 12, color: '#6b6b66', flexWrap: 'wrap' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -13,10 +15,11 @@ export default function RouteMap() {
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ width: 24, height: 3, background: '#3b6d11', display: 'inline-block', borderRadius: 2 }} /> Fully loaded
         </span>
+        <span style={{ fontSize: 11, color: '#9ca3af', fontStyle: 'italic' }}>Click a route line for trip details</span>
       </div>
 
       {/* SVG Map */}
-      <div style={{ background: '#eef2f7', borderRadius: 10, overflow: 'hidden', marginBottom: 14 }}>
+      <div style={{ background: '#eef2f7', borderRadius: 10, overflow: 'hidden', marginBottom: 14, position: 'relative' }}>
         <svg viewBox="0 0 480 340" style={{ display: 'block', width: '100%' }}>
           {/* Background */}
           <rect width="480" height="340" fill="#eef2f7" />
@@ -32,16 +35,29 @@ export default function RouteMap() {
             const offset = ((idx % 3) - 1) * 18
             const mx = (o.x + d.x) / 2 + offset
             const my = (o.y + d.y) / 2 - Math.abs(offset) * 0.8
+            const pathD = `M${o.x},${o.y} Q${mx},${my} ${d.x},${d.y}`
             return (
-              <path
-                key={t.id}
-                d={`M${o.x},${o.y} Q${mx},${my} ${d.x},${d.y}`}
-                fill="none"
-                stroke={color}
-                strokeWidth={isEmpty ? 2 : 1.5}
-                strokeOpacity={isEmpty ? 0.8 : 0.5}
-                strokeDasharray={isEmpty ? '6,3' : 'none'}
-              />
+              <g key={t.id}>
+                {/* Visible route line */}
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={isEmpty ? 2 : 1.5}
+                  strokeOpacity={isEmpty ? 0.8 : 0.5}
+                  strokeDasharray={isEmpty ? '6,3' : 'none'}
+                  style={{ pointerEvents: 'none' }}
+                />
+                {/* Invisible wider hit area for easier clicking */}
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="transparent"
+                  strokeWidth={12}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setTooltip(tooltip?.id === t.id ? null : { ...t, mx, my })}
+                />
+              </g>
             )
           })}
 
@@ -68,6 +84,42 @@ export default function RouteMap() {
             )
           })}
         </svg>
+
+        {/* Tooltip */}
+        {tooltip && (
+          <div style={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            background: '#fff',
+            border: '1px solid rgba(0,0,0,0.12)',
+            borderRadius: 10,
+            padding: '12px 16px',
+            fontSize: 12,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            minWidth: 220,
+            zIndex: 10,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <span style={{ fontWeight: 700, fontSize: 13 }}>{tooltip.id}</span>
+              <button onClick={() => setTooltip(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 16, color: '#6b6b66', lineHeight: 1 }}>×</button>
+            </div>
+            <TooltipRow label="Driver" value={DRIVERS[tooltip.d]?.name} />
+            <TooltipRow label="Origin" value={tooltip.o} />
+            <TooltipRow label="Destination" value={tooltip.dt} />
+            <TooltipRow label="Total miles" value={tooltip.tot + ' mi'} />
+            <TooltipRow label="Empty miles" value={tooltip.emp + ' mi'} />
+            <div style={{ marginTop: 8 }}>
+              <span style={{
+                background: tooltip.emp > 0 ? '#fcebeb' : '#eaf3de',
+                color: tooltip.emp > 0 ? '#a32d2d' : '#3b6d11',
+                fontSize: 10, padding: '2px 8px', borderRadius: 20, fontWeight: 600
+              }}>
+                {tooltip.emp > 0 ? `Deadhead return — ${tooltip.emp} mi empty` : 'Fully loaded'}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Hub Summary Table */}
@@ -109,6 +161,16 @@ export default function RouteMap() {
           </table>
         </div>
       </div>
+
+    </div>
+  )
+}
+
+function TooltipRow({ label, value }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid rgba(0,0,0,0.06)', fontSize: 12 }}>
+      <span style={{ color: '#6b6b66' }}>{label}</span>
+      <span style={{ fontWeight: 600 }}>{value}</span>
     </div>
   )
 }
