@@ -1,5 +1,7 @@
+import DriverProfiles from './components/DriverProfiles'
 import { useState } from 'react'
 import Dashboard from './components/Dashboard'
+
 
 const TABS = [
   { id: 'dashboard',    label: 'Dashboard' },
@@ -55,7 +57,8 @@ function App() {
       {/* Panel */}
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
         {activeTab === 'dashboard' && <Dashboard />}
-        {activeTab !== 'dashboard' && (
+        {activeTab === 'drivers' && <DriverProfiles />}
+        {activeTab !== 'dashboard' && activeTab !== 'drivers' && (
           <>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: '#1a1a18' }}>
               {TABS.find(t => t.id === activeTab)?.label}
