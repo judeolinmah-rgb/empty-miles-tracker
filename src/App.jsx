@@ -1,3 +1,4 @@
+import RouteMap from './components/RouteMap'
 import DriverProfiles from './components/DriverProfiles'
 import { useState } from 'react'
 import Dashboard from './components/Dashboard'
@@ -58,7 +59,9 @@ function App() {
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'drivers' && <DriverProfiles />}
-        {activeTab !== 'dashboard' && activeTab !== 'drivers' && (
+        {activeTab === 'map' && <RouteMap />}
+        {activeTab !== 'dashboard' && activeTab !== 'drivers' && activeTab !== 'map' && (
+        
           <>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: '#1a1a18' }}>
               {TABS.find(t => t.id === activeTab)?.label}
