@@ -3,6 +3,7 @@ import Dashboard from './components/Dashboard'
 import DriverProfiles from './components/DriverProfiles'
 import RouteMap from './components/RouteMap'
 import Optimization from './components/Optimization'
+import ValueProposition from './components/ValueProposition'
 
 const TABS = [
   { id: 'dashboard',    label: 'Dashboard' },
@@ -58,10 +59,11 @@ function App() {
       {/* Panel */}
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
         {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'value' && <ValueProposition />}
         {activeTab === 'drivers' && <DriverProfiles />}
         {activeTab === 'map' && <RouteMap />}
         {activeTab === 'optimization' && <Optimization />}
-        {activeTab !== 'dashboard' && activeTab !== 'drivers' && activeTab !== 'map' && activeTab !== 'optimization' && (
+        {activeTab !== 'dashboard' && activeTab !== 'value' && activeTab !== 'drivers' && activeTab !== 'map' && activeTab !== 'optimization' && (
           <>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: '#1a1a18' }}>
               {TABS.find(t => t.id === activeTab)?.label}
