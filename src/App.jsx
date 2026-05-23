@@ -7,6 +7,7 @@ import ValueProposition from './components/ValueProposition'
 import DriverMobileApp from './components/DriverMobileApp'
 import PredictivePositioning from './components/PredictivePositioning'
 import SummaryReport from './components/SummaryReport'
+import ProjectJourney from './components/ProjectJourney'
 
 const TABS = [
   { id: 'dashboard',    label: 'Dashboard' },
@@ -69,14 +70,7 @@ function App() {
         {activeTab === 'mobile' && <DriverMobileApp />}
         {activeTab === 'predict' && <PredictivePositioning />}
         {activeTab === 'report' && <SummaryReport />}
-        {activeTab !== 'dashboard' && activeTab !== 'value' && activeTab !== 'drivers' && activeTab !== 'map' && activeTab !== 'optimization' && activeTab !== 'mobile' && activeTab !== 'predict' && activeTab !== 'report' && (
-          <>
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: '#1a1a18' }}>
-              {TABS.find(t => t.id === activeTab)?.label}
-            </h2>
-            <p style={{ color: '#6b6b66', marginTop: 8 }}>This tab is coming soon.</p>
-          </>
-        )}
+        {activeTab === 'journey' && <ProjectJourney />}
       </div>
 
     </div>
