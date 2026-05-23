@@ -1,8 +1,8 @@
-import RouteMap from './components/RouteMap'
-import DriverProfiles from './components/DriverProfiles'
 import { useState } from 'react'
 import Dashboard from './components/Dashboard'
-
+import DriverProfiles from './components/DriverProfiles'
+import RouteMap from './components/RouteMap'
+import Optimization from './components/Optimization'
 
 const TABS = [
   { id: 'dashboard',    label: 'Dashboard' },
@@ -60,8 +60,8 @@ function App() {
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'drivers' && <DriverProfiles />}
         {activeTab === 'map' && <RouteMap />}
-        {activeTab !== 'dashboard' && activeTab !== 'drivers' && activeTab !== 'map' && (
-        
+        {activeTab === 'optimization' && <Optimization />}
+        {activeTab !== 'dashboard' && activeTab !== 'drivers' && activeTab !== 'map' && activeTab !== 'optimization' && (
           <>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: '#1a1a18' }}>
               {TABS.find(t => t.id === activeTab)?.label}
