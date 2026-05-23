@@ -5,6 +5,7 @@ import RouteMap from './components/RouteMap'
 import Optimization from './components/Optimization'
 import ValueProposition from './components/ValueProposition'
 import DriverMobileApp from './components/DriverMobileApp'
+import PredictivePositioning from './components/PredictivePositioning'
 
 const TABS = [
   { id: 'dashboard',    label: 'Dashboard' },
@@ -65,7 +66,8 @@ function App() {
         {activeTab === 'map' && <RouteMap />}
         {activeTab === 'optimization' && <Optimization />}
         {activeTab === 'mobile' && <DriverMobileApp />}
-        {activeTab !== 'dashboard' && activeTab !== 'value' && activeTab !== 'drivers' && activeTab !== 'map' && activeTab !== 'optimization' && activeTab !== 'mobile' && (
+        {activeTab === 'predict' && <PredictivePositioning />}
+        {activeTab !== 'dashboard' && activeTab !== 'value' && activeTab !== 'drivers' && activeTab !== 'map' && activeTab !== 'optimization' && activeTab !== 'mobile' && activeTab !== 'predict' && (
           <>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: '#1a1a18' }}>
               {TABS.find(t => t.id === activeTab)?.label}
