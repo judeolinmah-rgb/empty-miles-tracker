@@ -6,9 +6,9 @@ export default function Optimization() {
 
   const totalEmp = TRIPS.reduce((a, t) => a + t.emp, 0)
   const totalTot = TRIPS.reduce((a, t) => a + t.tot, 0)
-  const currentCost = (totalEmp * 1.80).toFixed(0)
+  const currentCost = (totalEmp * 2.50).toFixed(0)
   const savedMiles = Math.round(totalEmp * (emptyRate / 100))
-  const savedCost = (savedMiles * 1.80).toFixed(0)
+  const savedCost = (savedMiles * 2.50).toFixed(0)
   const newEmpMiles = totalEmp - savedMiles
   const newEmpRate = ((newEmpMiles / totalTot) * 100).toFixed(1)
 
@@ -49,7 +49,7 @@ export default function Optimization() {
           <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>After optimization</h3>
           <Row label="Empty miles" value={newEmpMiles.toLocaleString() + ' mi'} />
           <Row label="Empty rate" value={newEmpRate + '%'} />
-          <Row label="Est. monthly cost" value={'$' + parseInt((newEmpMiles * 1.80)).toLocaleString()} />
+          <Row label="Est. monthly cost" value={'$' + parseInt((newEmpMiles * 2.50)).toLocaleString()} />
         </div>
       </div>
 

@@ -4,9 +4,9 @@ export default function SummaryReport() {
   const tot = TRIPS.reduce((a, t) => a + t.tot, 0)
   const emp = TRIPS.reduce((a, t) => a + t.emp, 0)
   const pct = (emp / tot * 100).toFixed(1)
-  const cost = (emp * 1.80).toFixed(0)
+  const cost = (emp * 2.50).toFixed(0)
   const totalSaved = MATCHES.reduce((a, m) => a + m.saved, 0)
-  const savedCost = (totalSaved * 1.80).toFixed(0)
+  const savedCost = (totalSaved * 2.50).toFixed(0)
 
   return (
     <div>
@@ -48,7 +48,7 @@ export default function SummaryReport() {
           {[
             `Fleet empty mile rate is ${pct}% — above the industry target of 20–30% for optimized operations.`,
             `${emp.toLocaleString()} empty miles were driven in the 30-day window at an estimated cost of $${parseInt(cost).toLocaleString()}.`,
-            `${MATCHES.length} load match opportunities identified that could save ${totalSaved.toLocaleString()} miles and $${parseInt(savedCost).toLocaleString()} per month.`,
+            `${MATCHES.length} specific load match opportunities identified that could save ${totalSaved.toLocaleString()} miles and $${parseInt(savedCost).toLocaleString()} per month (based on broker-matched backhaul lanes, independent of reduction target).`,
             `Port Newark and JFK Cargo are the highest-priority hubs for backhaul intervention based on empty leg frequency.`,
             `4 of 6 drivers have empty rates above 40%, indicating a systemic lane problem rather than individual driver behavior.`,
           ].map((finding, i) => (

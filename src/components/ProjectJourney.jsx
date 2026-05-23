@@ -30,7 +30,7 @@ export default function ProjectJourney() {
       items: [
         'Replaced placeholder data with 6 named drivers with real CDL backgrounds and home bases.',
         'Used US-format phone numbers and actual highway mileages between real city pairs.',
-        'Added a driver roster panel and empty mile cost estimates at $1.80/mile.',
+        'Added a driver roster panel and empty mile cost estimates at $2.50/mile.',
       ]
     },
     {

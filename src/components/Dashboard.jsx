@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { DRIVERS, TRIPS, MAIN_HUBS, HUB_COLORS } from '../data'
+
 
 function kpiColor(pct) {
   if (pct >= 50) return '#a32d2d'
@@ -7,20 +9,51 @@ function kpiColor(pct) {
 }
 
 export default function Dashboard() {
+  const [showTalkingPoints, setShowTalkingPoints] = useState(false)
+
   const tot = TRIPS.reduce((a, t) => a + t.tot, 0)
   const emp = TRIPS.reduce((a, t) => a + t.emp, 0)
   const pct = (emp / tot * 100).toFixed(1)
-  const cost = (emp * 1.8).toFixed(0)
+  const cost = (emp * 2.5).toFixed(0)
 
   return (
     <div>
+  {/* Talking Points Toggle */}
+  <div style={{ marginBottom: 16 }}>
+    <button
+      onClick={() => setShowTalkingPoints(!showTalkingPoints)}
+      style={{ background: showTalkingPoints ? '#854f0b' : '#fff', color: showTalkingPoints ? '#fff' : '#854f0b', border: '1px solid #854f0b', borderRadius: 8, padding: '7px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+    >
+      {showTalkingPoints ? 'Hide Talking Points' : '📋 Show Talking Points'}
+    </button>
+  </div>
 
+  {/* Talking Points Panel */}
+  {showTalkingPoints && (
+    <div style={{ background: '#fffdf5', border: '1px solid rgba(133,79,11,0.18)', borderRadius: 12, padding: '16px 20px', marginBottom: 20 }}>
+      <h3 style={{ fontSize: 13, fontWeight: 700, color: '#854f0b', marginBottom: 10 }}>📋 Talking Points — Dashboard</h3>
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        {[
+          'The NY/NJ/CT/PA corridor is one of the busiest freight markets in the US, anchored by Port Newark, JFK Cargo, and the Hunts Point food terminal in the Bronx.',
+          'J. Hammerhead Trucking LLC logged 25 trips over 30 days, covering 2,329 total miles — 957 of those miles were driven with an empty trailer, representing a 41.1% empty rate.',
+          'The realistic working estimate for independent truckers in this corridor is 35–40%. At 41.1%, J. Hammerhead is running just above that range — representing a direct and immediate opportunity for cost reduction.',
+          'At $2.50 per mile (reflecting current fuel and operating costs for a Class 8 truck in the NY/NJ market), those empty miles cost an estimated $2,393 in the 30-day period — or roughly $28,710 per year if unchanged.',
+          'The weekly chart shows empty miles are consistent across the month — this is not a seasonal spike, it is a structural problem that requires a systematic fix.',
+        ].map((point, i) => (
+          <li key={i} style={{ fontSize: 13, color: '#1a1a18', padding: '5px 0 5px 16px', position: 'relative', lineHeight: 1.6 }}>
+            <span style={{ position: 'absolute', left: 0, color: '#854f0b', fontWeight: 700 }}>→</span>
+            {point}
+          </li>
+        ))}
+      </ul>
+    </div>
+)} 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
         <KPI label="Total Miles" value={tot.toLocaleString()} sub="30-day window" color="#185fa5" />
         <KPI label="Empty Miles" value={emp.toLocaleString()} sub="deadhead" color="#a32d2d" />
         <KPI label="Empty Rate" value={pct + '%'} sub="of total miles" color={kpiColor(parseFloat(pct))} />
-        <KPI label="Est. Cost" value={'$' + parseInt(cost).toLocaleString()} sub="@ $1.80/mi" color="#854f0b" />
+        <KPI label="Est. Cost" value={'$' + parseInt(cost).toLocaleString()} sub="@ $2.50/mi" color="#854f0b" />
         <KPI label="Drivers" value={DRIVERS.length} sub="active" color="#185fa5" />
         <KPI label="Trips" value={TRIPS.length} sub="logged" color="#533ab7" />
       </div>
